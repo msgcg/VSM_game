@@ -1,0 +1,9 @@
+Django>=6.0,<7.0
+pillow>=11.0.0
+reportlab>=4.0.0
+pypdf>=5.0.0
+sqlparse>=0.5.0
+requests>=2.30.0
+gunicorn>=22.0.0
+edge-tts>=7.0.0
+python-dotenv>=1.0.0

@@ -1,0 +1,36 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - WHISPER_MODELS=base
+    container_name: vsm_simulator_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - vsm_media:/app/media
+      - vsm_static:/app/staticfiles
+      - vsm_whisper_models:/opt/whisper/models
+    environment:
+      - DJANGO_SETTINGS_MODULE=vsm_config.settings
+      - PYTHONUNBUFFERED=1
+      - WHISPER_BIN_PATH=/usr/local/bin/whisper-cli
+      - WHISPER_MODEL_PATH=/opt/whisper/models/ggml-base.bin
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,video,graphics
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/login/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  vsm_media:
+  vsm_static:
+  vsm_whisper_models:

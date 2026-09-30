@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#082a99"/>
+    </linearGradient>
+    <linearGradient id="gold2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#facc15"/>
+      <stop offset="100%" stop-color="#ca8a04"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#bg2)" stroke="url(#gold2)" stroke-width="3"/>
+  <!-- Female Hair -->
+  <circle cx="60" cy="46" r="21" fill="#fcd34d"/>
+  <path d="M36 54 Q38 28 60 26 Q82 28 84 54 Q86 70 82 78 Q78 50 60 48 Q42 50 38 78 Q34 70 36 54 Z" fill="#92400e"/>
+  <!-- Face -->
+  <circle cx="60" cy="48" r="18" fill="#fed7aa"/>
+  <!-- Modern Pilot/Conductor Cap -->
+  <path d="M42 34 Q60 26 78 34 L80 30 Q60 22 40 30 Z" fill="#0b1329"/>
+  <circle cx="60" cy="30" r="3.5" fill="#facc15"/>
+  <!-- Uniform Suit -->
+  <path d="M26 102 Q32 74 60 74 Q88 74 94 102 Z" fill="#091428"/>
+  <!-- Silk Scarf (Moscow Transport / VSM Style) -->
+  <path d="M50 74 Q60 84 70 74 Q64 96 60 100 Q56 96 50 74 Z" fill="#fd033a"/>
+  <!-- Wings pin -->
+  <path d="M72 82 L82 82 L77 86 Z" fill="url(#gold2)"/>
+  <circle cx="60" cy="60" r="56" fill="none" stroke="rgba(250,204,21,0.3)" stroke-width="1.5"/>
+</svg>

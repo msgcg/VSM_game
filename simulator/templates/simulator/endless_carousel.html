@@ -1,0 +1,3253 @@
+{% extends 'simulator/base.html' %}
+{% load static %}
+
+{% block title %}Карусель скоростных решений (250 → 400 км/ч) | ВСМ «Белый кречет»{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Стили скоростной карусели решений */
+.vsm-carousel-hud {
+    background: linear-gradient(135deg, rgba(8, 42, 153, 0.4) 0%, rgba(13, 22, 41, 0.95) 100%);
+    border: 1px solid rgba(0, 210, 255, 0.25);
+    border-radius: 18px;
+    padding: 1.25rem 1.75rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.vsm-carousel-hud::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #fd033a, #00d2ff, #fd033a);
+    background-size: 200% 100%;
+    animation: speedBarMove 3s linear infinite;
+}
+
+/* Спидометр */
+.vsm-speedo-box {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.vsm-speedo-digit {
+    font-size: 2.8rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    background: linear-gradient(180deg, #ffffff 30%, var(--vsm-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 25px rgba(0, 210, 255, 0.6);
+}
+
+.vsm-speedo-unit {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--vsm-cyan);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.vsm-speed-tier-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: rgba(0, 210, 255, 0.15);
+    color: var(--vsm-cyan);
+    border: 1px solid rgba(0, 210, 255, 0.3);
+}
+
+/* Стрик и множитель */
+.vsm-streak-meter {
+    background: rgba(253, 3, 58, 0.12);
+    border: 1px solid rgba(253, 3, 58, 0.35);
+    border-radius: 12px;
+    padding: 0.6rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.vsm-streak-meter.hot {
+    background: rgba(253, 3, 58, 0.25);
+    border-color: #fd033a;
+    box-shadow: 0 0 20px rgba(253, 3, 58, 0.4);
+    animation: pulseStreak 1.5s infinite;
+}
+
+@keyframes pulseStreak {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+}
+
+.vsm-streak-val {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #ff4d6d;
+}
+
+.vsm-score-meter {
+    background: rgba(0, 210, 255, 0.08);
+    border: 1px solid rgba(0, 210, 255, 0.25);
+    border-radius: 12px;
+    padding: 0.6rem 1.2rem;
+    transition: all 0.3s ease;
+}
+
+@keyframes vsmPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.35); color: #facc15; }
+    100% { transform: scale(1); }
+}
+.vsm-pop-anim {
+    display: inline-block;
+    animation: vsmPop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes vsmPulseCyan {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 210, 255, 0.6); }
+    50% { transform: scale(1.03); box-shadow: 0 0 16px 2px rgba(0, 210, 255, 0.45); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 210, 255, 0); }
+}
+.vsm-pulse-cyan {
+    animation: vsmPulseCyan 0.6s ease;
+}
+
+.vsm-mult-badge {
+    background: #fd033a;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+    transition: all 0.25s ease;
+}
+
+/* Шкалы состояния поезда */
+.vsm-vitals-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vsm-vital-card {
+    background: rgba(13, 22, 41, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 0.6rem 0.85rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.vsm-vital-card .vsm-delta-popup {
+    position: absolute;
+    right: 10px;
+    top: 6px;
+    font-size: 0.85rem;
+    font-weight: 900;
+    opacity: 0;
+    transform: translateY(0);
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+
+.vsm-vital-card .vsm-delta-popup.show-delta {
+    opacity: 1;
+    transform: translateY(-8px);
+}
+
+.vsm-delta-positive { color: #10b981; }
+.vsm-delta-negative { color: #ef4444; }
+
+/* Карточка карусели */
+.vsm-carousel-stage {
+    position: relative;
+    perspective: 1200px;
+    margin-bottom: 2rem;
+}
+
+.vsm-challenge-card {
+    background: linear-gradient(180deg, #101a33 0%, #0d1629 100%);
+    border: 2px solid rgba(0, 210, 255, 0.35);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(8, 42, 153, 0.3);
+    transition: transform 0.4s ease, opacity 0.4s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.vsm-challenge-card.anim-exit {
+    transform: translateX(-100px) rotateY(-8deg) scale(0.95);
+    opacity: 0;
+}
+
+.vsm-challenge-card.anim-enter {
+    transform: translateX(100px) rotateY(8deg) scale(0.95);
+    opacity: 0;
+}
+
+/* Таймер обратного отсчета */
+.vsm-countdown-container {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 1.25rem 0;
+    position: relative;
+}
+
+.vsm-countdown-bar {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #10b981, #00d2ff);
+    transition: width 1s linear, background 0.3s ease;
+}
+
+.vsm-countdown-bar.urgent {
+    background: linear-gradient(90deg, #f59e0b, #fd033a);
+    animation: flashBar 0.5s infinite alternate;
+}
+
+@keyframes flashBar {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+}
+
+/* Варианты решений */
+.vsm-choices-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.2rem;
+    margin-top: 1.5rem;
+}
+
+.vsm-endless-choice-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    padding: 1.25rem 1.4rem;
+    text-align: left;
+    color: #f8fafc;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.vsm-endless-choice-btn:hover:not(:disabled) {
+    background: rgba(8, 42, 153, 0.35);
+    border-color: var(--vsm-cyan);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 210, 255, 0.25);
+}
+
+.vsm-endless-choice-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.vsm-choice-key-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    font-size: 0.72rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.vsm-choice-text {
+    font-size: 0.98rem;
+    font-weight: 700;
+    line-height: 1.4;
+    padding-right: 2rem;
+}
+
+.vsm-choice-hint {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    line-height: 1.35;
+}
+
+.vsm-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(3, 7, 18, 0.88);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.vsm-modal-box {
+    background: #0d1629;
+    border: 2px solid rgba(0, 210, 255, 0.4);
+    border-radius: 24px;
+    max-width: 650px;
+    width: 100%;
+    padding: 2.2rem;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 210, 255, 0.25);
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+@media (max-width: 900px) {
+    .vsm-choices-grid {
+        grid-template-columns: 1fr;
+    }
+    .vsm-vitals-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .vsm-speedo-box {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .vsm-modal-backdrop {
+        padding: 0.5rem;
+    }
+    .vsm-modal-box {
+        padding: 1.25rem 1rem;
+        width: 96vw;
+        border-radius: 16px;
+        max-height: 92vh;
+    }
+    .vsm-debrief-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1300px; margin: 0 auto; padding-bottom: 3rem;">
+
+    <!-- Хлебные крошки и статус линии -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <a href="{% url 'simulator:dashboard' %}" style="color: #94a3b8; text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem;">
+                <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i>
+                <span>Главный пульт</span>
+            </a>
+            <span style="color: #475569;">/</span>
+            <span style="color: var(--vsm-cyan); font-weight: 700; font-size: 0.85rem;">Карусель решений</span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <button onclick="openBriefingModal()" class="vsm-btn vsm-btn-outline" style="padding: 0.4rem 0.9rem; font-size: 0.8rem;">
+                <i data-lucide="help-circle" style="width: 14px; height: 14px;"></i>
+                <span>Регламент карусели</span>
+            </button>
+            <button id="finish-shift-btn" onclick="finishCurrentShift()" class="vsm-btn" style="background: rgba(253, 3, 58, 0.2); border: 1px solid #fd033a; color: #ff6b8b; padding: 0.4rem 0.9rem; font-size: 0.8rem; display: none;">
+                <i data-lucide="flag" style="width: 14px; height: 14px;"></i>
+                <span>Сдать вагон и смену</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ВЕРХНИЙ КОКПИТ-HUD: СКОРОСТЬ, СТРИК, ОЧКИ, ШКАЛЫ, УРОВЕНЬ ПРОВОДНИКА И СМЕНЫ -->
+    <div class="vsm-carousel-hud">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+            
+            <!-- Спидометр поезда -->
+            <div class="vsm-speedo-box">
+                <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+                    <span id="hud-speed" class="vsm-speedo-digit">260</span>
+                    <span class="vsm-speedo-unit">КМ/Ч</span>
+                </div>
+                <div>
+                    <div id="hud-tier-badge" class="vsm-speed-tier-badge">
+                        <i data-lucide="zap" style="width: 14px; height: 14px;"></i>
+                        <span id="hud-tier-text">Уровень 1 • Штатный рейс</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem;">
+                        Поезд № 702 «Белый кречет» • Трасса ВСМ-1
+                    </div>
+                </div>
+            </div>
+
+            <!-- Стрик и Множитель комбо -->
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <div id="hud-streak-container" class="vsm-streak-meter">
+                    <i data-lucide="flame" style="width: 22px; height: 22px; color: #fd033a;"></i>
+                    <div>
+                        <div style="font-size: 0.72rem; color: #cbd5e1; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">
+                            Серия решений
+                        </div>
+                        <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+                            <span id="hud-streak" class="vsm-streak-val">{% if active_session %}{{ active_session.current_streak }}{% else %}0{% endif %}</span>
+                            <span id="hud-multiplier" class="vsm-mult-badge">x{% if active_session %}{{ active_session.multiplier|stringformat:".1f" }}{% else %}1.0{% endif %} МНОЖИТЕЛЬ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Текущий счет и заработанный опыт -->
+                <div id="hud-score-container" class="vsm-score-meter">
+                    <div style="font-size: 0.72rem; color: #cbd5e1; text-transform: uppercase; font-weight: 700;">
+                        Счет смены / Опыт
+                    </div>
+                    <div style="display: flex; align-items: baseline; gap: 0.6rem;">
+                        <span id="hud-score" style="font-size: 1.4rem; font-weight: 900; color: #fff;">{% if active_session %}{{ active_session.total_score }}{% else %}0{% endif %}</span>
+                        <span id="hud-xp" style="font-size: 0.85rem; font-weight: 800; color: #facc15;">+{% if active_session %}{{ active_session.earned_xp }}{% else %}0{% endif %} XP</span>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!-- Жизненные шкалы поезда ВСМ -->
+        <div class="vsm-vitals-grid">
+            <!-- Лояльность -->
+            <div class="vsm-vital-card">
+                <span id="delta-loyalty" class="vsm-delta-popup">+0</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                    <span style="font-size: 0.75rem; color: #cbd5e1; font-weight: 700; display: flex; align-items: center; gap: 0.3rem;">
+                        <i data-lucide="heart" style="width: 14px; height: 14px; color: #ff6b8b;"></i>
+                        Лояльность
+                    </span>
+                    <span id="val-loyalty" style="font-size: 0.85rem; font-weight: 800; color: #ff6b8b;">85%</span>
+                </div>
+                <div class="vsm-progress-track" style="height: 6px;">
+                    <div id="bar-loyalty" class="vsm-progress-fill" style="width: 85%; background: #fd033a;"></div>
+                </div>
+            </div>
+
+            <!-- Безопасность -->
+            <div class="vsm-vital-card">
+                <span id="delta-safety" class="vsm-delta-popup">+0</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                    <span style="font-size: 0.75rem; color: #cbd5e1; font-weight: 700; display: flex; align-items: center; gap: 0.3rem;">
+                        <i data-lucide="shield-check" style="width: 14px; height: 14px; color: #00d2ff;"></i>
+                        Безопасность
+                    </span>
+                    <span id="val-safety" style="font-size: 0.85rem; font-weight: 800; color: #00d2ff;">95%</span>
+                </div>
+                <div class="vsm-progress-track" style="height: 6px;">
+                    <div id="bar-safety" class="vsm-progress-fill" style="width: 95%; background: #00d2ff;"></div>
+                </div>
+            </div>
+
+            <!-- Качество сервиса -->
+            <div class="vsm-vital-card">
+                <span id="delta-service" class="vsm-delta-popup">+0</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                    <span style="font-size: 0.75rem; color: #cbd5e1; font-weight: 700; display: flex; align-items: center; gap: 0.3rem;">
+                        <i data-lucide="award" style="width: 14px; height: 14px; color: #10b981;"></i>
+                        Сервис ВСМ
+                    </span>
+                    <span id="val-service" style="font-size: 0.85rem; font-weight: 800; color: #10b981;">85%</span>
+                </div>
+                <div class="vsm-progress-track" style="height: 6px;">
+                    <div id="bar-service" class="vsm-progress-fill" style="width: 85%; background: #10b981;"></div>
+                </div>
+            </div>
+
+            <!-- Стресс проводника -->
+            <div class="vsm-vital-card">
+                <span id="delta-stress" class="vsm-delta-popup">+0</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                    <span style="font-size: 0.75rem; color: #cbd5e1; font-weight: 700; display: flex; align-items: center; gap: 0.3rem;">
+                        <i data-lucide="activity" style="width: 14px; height: 14px; color: #f59e0b;"></i>
+                        Стресс
+                    </span>
+                    <span id="val-stress" style="font-size: 0.85rem; font-weight: 800; color: #f59e0b;">15%</span>
+                </div>
+                <div class="vsm-progress-track" style="height: 6px;">
+                    <div id="bar-stress" class="vsm-progress-fill" style="width: 15%; background: #f59e0b;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Верхнее электронное светодиодное табло вагона (LED Matrix Runline) -->
+    <div class="vsm-car-led-board">
+        <div class="vsm-led-ticker-wrap">
+            <span class="vsm-led-item vsm-led-speed">
+                <i data-lucide="gauge" style="width: 15px; height: 15px;"></i>
+                <span>СКОРОСТЬ: <span id="led-live-speed">260</span> КМ/Ч</span>
+            </span>
+            <span class="vsm-led-sep">■</span>
+            <span class="vsm-led-item">
+                <i data-lucide="train" style="width: 14px; height: 14px;"></i>
+                <span>ПОЕЗД № 702 «БЕЛЫЙ КРЕЧЕТ»</span>
+            </span>
+            <span class="vsm-led-sep">■</span>
+            <span class="vsm-led-item">
+                <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+                <span id="led-car-info">ВАГОН № 3 (КОМФОРТ)</span>
+            </span>
+            <span class="vsm-led-sep">■</span>
+            <span class="vsm-led-item">
+                <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+                <span>СТАНЦИЯ: <span id="led-station-count">1</span> ИЗ 8</span>
+            </span>
+            <span class="vsm-led-sep">■</span>
+            <span class="vsm-led-item">
+                <i data-lucide="thermometer" style="width: 14px; height: 14px;"></i>
+                <span id="carousel-car-temp">САЛОН: +22°C</span>
+            </span>
+            <span class="vsm-led-sep">■</span>
+            <span class="vsm-led-item">
+                <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+                <span id="carousel-car-clock">14:50</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- 2. Основной отсек вагона: Салон с пассажиром + Настенный шкаф спецсредств -->
+    <div class="vsm-car-stage-layout">
+        
+        <!-- Салон вагона (Интерактивный Viewport) -->
+        <div id="challenge-card" class="vsm-car-viewport" style="background-image: url('{% static 'simulator/img/train_interior_1.png' %}');">
+            
+            <!-- Заголовок карточки: вагон, сложность, таймер -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+                        <span id="card-diff-badge" style="background: #10b981; color: #fff; font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 6px; text-transform: uppercase;">
+                            Уровень 1
+                        </span>
+                        <span id="card-service-badge" class="vsm-service-pill vsm-badge-track-economy" style="display: none; padding: 0.2rem 0.6rem; font-size: 0.72rem;">
+                            <i data-lucide="shield-check" style="width: 12px; height: 12px;"></i>
+                            <span id="card-service-text">Эконом-класс</span>
+                        </span>
+                        <span id="card-source-badge" style="display: none; background: rgba(0, 210, 255, 0.15); border: 1px solid rgba(0, 210, 255, 0.4); color: var(--vsm-cyan); font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 6px; align-items: center; gap: 0.3rem;">
+                            <i data-lucide="compass" style="width: 12px; height: 12px;"></i>
+                            <span id="card-source-text">Из сценария</span>
+                        </span>
+                        <span id="card-car-badge" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); font-size: 0.75rem; color: #cbd5e1; padding: 0.2rem 0.6rem; border-radius: 6px;">
+                            Вагон № 3 (Комфорт)
+                        </span>
+                        <span id="card-counter-badge" style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">
+                            Станция <span id="card-solved-count">1</span> из 8
+                        </span>
+                    </div>
+                    <h2 id="card-title" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.3;">
+                        Загрузка вводной задачи...
+                    </h2>
+                </div>
+
+                <!-- Блок таймера -->
+                <div style="text-align: right;">
+                    <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 0.2rem;">
+                        Время на решение
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.4rem; justify-content: flex-end;">
+                        <i data-lucide="timer" style="width: 18px; height: 18px; color: var(--vsm-cyan);"></i>
+                        <span id="timer-seconds-text" style="font-size: 1.6rem; font-weight: 900; color: var(--vsm-cyan); font-variant-numeric: tabular-nums;">
+                            25
+                        </span>
+                        <span style="font-size: 0.8rem; color: #94a3b8;">сек</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Индикаторная полоса таймера -->
+            <div class="vsm-countdown-container" style="margin: 0.85rem 0;">
+                <div id="countdown-progress" class="vsm-countdown-bar" style="width: 100%;"></div>
+            </div>
+
+            <!-- Оперативная обстановка вагона -->
+            <div style="background: rgba(0, 0, 0, 0.4); border-left: 4px solid var(--vsm-cyan); border-radius: 0 12px 12px 0; padding: 0.75rem 1.15rem; margin: 0.75rem 0;">
+                <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="activity" style="width: 13px; height: 13px; color: var(--vsm-cyan);"></i>
+                    <span>Обстановка в вагоне</span>
+                </div>
+                <p id="card-situation-text" style="font-size: 0.95rem; color: #e2e8f0; line-height: 1.5; margin: 0;">
+                    Загрузка оперативной обстановки...
+                </p>
+            </div>
+
+            <!-- Интерактивный диалог: лента чата вагона ВСМ -->
+            <div id="carousel-chat-feed" class="vsm-chat-feed" data-conductor-avatar="{% static 'simulator/img/' %}{{ conductor.avatar|default:'avatar_1.svg' }}" style="margin: 0.85rem 0;">
+                <div class="vsm-chat-row passenger" id="carousel-first-passenger-row">
+                    <!-- Портрет пассажира -->
+                    <div class="vsm-passenger-frame-col">
+                        <div class="vsm-passenger-avatar-box">
+                            <img id="card-char-avatar" src="{% static 'simulator/img/passenger_business.svg' %}" alt="Пассажир" class="vsm-passenger-avatar-img">
+                        </div>
+                        <div class="vsm-passenger-role-pill">
+                            <span class="vsm-status-indicator-dot"></span>
+                            <span id="card-character-role">Пассажир</span>
+                        </div>
+                    </div>
+
+                    <!-- Речевой бабл с указателем -->
+                    <div class="vsm-speech-bubble">
+                        <div class="vsm-speech-header">
+                            <div class="vsm-speech-speaker">
+                                <span id="card-character-name" class="vsm-speaker-name">Пассажир</span>
+                                <span id="card-character-mood" class="vsm-mood-badge vsm-mood-default">В диалоге</span>
+                            </div>
+                            <div class="vsm-speech-audio-controls">
+                                <button id="card-tts-btn" class="vsm-tts-play-btn" onclick="window.carouselEngine ? window.carouselEngine.toggleSpeechCurrent() : window.vsmAudio.toggleSpeechCurrent()" title="Озвучить реплику пассажира (TTS)" type="button">
+                                    <i data-lucide="volume-2" style="width: 14px; height: 14px;"></i>
+                                    <span>Озвучить</span>
+                                </button>
+                                <div class="vsm-speech-audio-wave" title="Голосовой контакт" onclick="window.carouselEngine ? window.carouselEngine.toggleSpeechCurrent() : window.vsmAudio.toggleSpeechCurrent()" style="cursor: pointer;">
+                                    <span></span><span></span><span></span><span></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="card-dialogue-text" class="vsm-speech-text">
+                            «...»
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Бортовая телеметрия / Системное уведомление поезда -->
+            <div id="card-telemetry-box" style="display: none; align-items: center; justify-content: space-between; gap: 0.6rem; font-size: 0.78rem; color: #38bdf8; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 0.45rem 0.85rem; margin-bottom: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
+                    <i data-lucide="radio" style="width: 15px; height: 15px; color: #38bdf8; flex-shrink: 0;"></i>
+                    <span id="card-telemetry-text">Телеметрия: параметры штатные</span>
+                </div>
+                <button type="button" id="card-telemetry-audio-btn" class="vsm-audio-btn vsm-telemetry-audio-btn" title="Озвучить бортовой журнал (роботизированный голос)" onclick="window.carouselEngine ? window.carouselEngine.toggleTelemetrySpeech() : null">
+                    <i data-lucide="volume-2" style="width: 13px; height: 13px;"></i>
+                    <span>Аудио журнала</span>
+                </button>
+            </div>
+
+            <!-- Нормативная подсказка / Отраслевой регламент ВСМ -->
+            <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.78rem; color: #94a3b8; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 0.45rem 0.85rem; margin-bottom: 0.75rem;">
+                <i data-lucide="book-marked" style="width: 15px; height: 15px; color: #facc15; flex-shrink: 0;"></i>
+                <span id="card-regulation-ref">Регламент: Правила перевозок п. 23 / Норматив обслуживания ВСМ</span>
+            </div>
+
+            <!-- Интерактивная зона воздействия в салоне (Drop-цель для оборудования) -->
+            <div id="carousel-car-drop-target" class="vsm-car-drop-target"
+                 ondragover="window.carouselEngine.handleDragOver(event)"
+                 ondragleave="window.carouselEngine.handleDragLeave(event)"
+                 ondrop="window.carouselEngine.handleDrop(event)">
+                <i data-lucide="crosshair" style="width: 18px; height: 18px; color: var(--vsm-cyan);"></i>
+                <span id="carousel-drop-target-text">Зона действия в вагоне: перетащите сюда предмет или кликните по оборудованию</span>
+            </div>
+
+        </div>
+
+        <!-- Настенный шкаф инвентаря и оборудования вагона ВСМ -->
+        <div class="vsm-car-equipment-rack">
+            <div class="vsm-rack-header">
+                <div class="vsm-rack-title">
+                    <i data-lucide="wrench" style="width: 16px; height: 16px; color: var(--vsm-cyan);"></i>
+                    <span>Оборудование вагона</span>
+                </div>
+                <span class="vsm-rack-badge">ВСМ-1</span>
+            </div>
+            
+            <div class="vsm-rack-items-list">
+                <!-- 1. Стоп-кран -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="emergency_brake" data-title="Рукоятка стоп-крана"
+                     ondragstart="window.carouselEngine.handleDragStart(event, 'emergency_brake', 'Рукоятка стоп-крана')"
+                     ondragend="window.carouselEngine.handleDragEnd(event)"
+                     onclick="window.carouselEngine.useEquipment('emergency_brake', 'Срыв стоп-крана')"
+                     title="Экстренное торможение поезда. Запрещено на мостах и в тоннелях!">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(239, 68, 68, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/stop_brake.svg' %}" alt="Стоп-кран" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #fca5a5;">Стоп-кран</div>
+                    <div class="vsm-tactile-sub">С пломбой</div>
+                </div>
+
+                <!-- 2. Огнетушитель ОВП-8 -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="fire_extinguisher" data-title="Огнетушитель ОВП-8"
+                     ondragstart="window.carouselEngine.handleDragStart(event, 'fire_extinguisher', 'Огнетушитель ОВП-8')"
+                     ondragend="window.carouselEngine.handleDragEnd(event)"
+                     onclick="window.carouselEngine.useEquipment('fire_extinguisher', 'Применение огнетушителя ОВП-8')"
+                     title="Пенный огнетушитель СПАС-ВО для тушения тамбура и очагов огня">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(245, 158, 11, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/fire_extinguisher.svg' %}" alt="Огнетушитель" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #fde68a;">ОВП-8</div>
+                    <div class="vsm-tactile-sub">Огнетушитель</div>
+                </div>
+
+                <!-- 3. Электрощит вагона и СКНБ -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="electric_panel" data-title="Электрощит и СКНБ"
+                     ondragstart="window.carouselEngine.handleDragStart(event, 'electric_panel', 'Электрощит и СКНБ')"
+                     ondragend="window.carouselEngine.handleDragEnd(event)"
+                     onclick="window.carouselEngine.useEquipment('electric_panel', 'Осмотр электрощита и СКНБ')"
+                     title="Проверка сигнализации СКНБ, ламп «Земля», автомата климата">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(0, 210, 255, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/electric_panel.svg' %}" alt="Электрощит" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #7dd3fc;">Электрощит</div>
+                    <div class="vsm-tactile-sub">СКНБ / Питание</div>
+                </div>
+
+                <!-- 4. Медаптечка и АНД -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="aed_medkit" data-title="Аптечка и дефибриллятор АНД"
+                     ondragstart="window.carouselEngine.handleDragStart(event, 'aed_medkit', 'Аптечка и дефибриллятор АНД')"
+                     ondragend="window.carouselEngine.handleDragEnd(event)"
+                     onclick="window.carouselEngine.useEquipment('aed_medkit', 'Вскрытие аптечки и АНД')"
+                     title="Комплект первой помощи и автоматический дефибриллятор АНД">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(16, 185, 129, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/aed_medkit.svg' %}" alt="Аптечка и АНД" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #a7f3d0;">Аптечка / АНД</div>
+                    <div class="vsm-tactile-sub">Первая помощь</div>
+                </div>
+
+                <!-- 5. Терминал УКЭБ -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="ukeb_scan" data-title="Терминал УКЭБ"
+                     ondragstart="window.carouselEngine.handleDragStart(event, 'ukeb_scan', 'Терминал УКЭБ')"
+                     ondragend="window.carouselEngine.handleDragEnd(event)"
+                     onclick="window.carouselEngine.useEquipment('ukeb_scan', 'Проверка по терминалу УКЭБ')"
+                     title="Сканирование билетов, проверка паспорта, оформление акта">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(168, 85, 247, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/ukeb_terminal.svg' %}" alt="Терминал УКЭБ" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #c084fc;">Терминал УКЭБ</div>
+                    <div class="vsm-tactile-sub">Контроль билетов</div>
+                </div>
+
+                <!-- 6. Чайный сервис -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="tea_service" data-title="Фирменный чай в подстаканнике"
+                     ondragstart="window.carouselEngine.handleDragStart(event, 'tea_service', 'Фирменный чай в подстаканнике')"
+                     ondragend="window.carouselEngine.handleDragEnd(event)"
+                     onclick="window.carouselEngine.useEquipment('tea_service', 'Предложить чай / воду с лимоном')"
+                     title="Фирменный чай в подстаканнике или вода для снятия раздражения">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(251, 191, 36, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/tea_glass.svg' %}" alt="Чайный сервис" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #fde047;">Сервис: Чай</div>
+                    <div class="vsm-tactile-sub">Подстаканник</div>
+                </div>
+
+                <!-- 7. Связь с машинистом УПС -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="driver_intercom" data-title="Интерком связи с машинистом"
+                     ondragstart="window.carouselEngine.handleDragStart(event, 'driver_intercom', 'Интерком связи с машинистом')"
+                     ondragend="window.carouselEngine.handleDragEnd(event)"
+                     onclick="window.carouselEngine.useEquipment('driver_intercom', 'Связь с машинистом по УПС')"
+                     title="Экстренная связь с головной кабиной и поездным диспетчером">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(59, 130, 246, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/driver_intercom.svg' %}" alt="Связь с машинистом" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #93c5fd;">Вызов кабины</div>
+                    <div class="vsm-tactile-sub">Интерком УПС</div>
+                </div>
+
+                <!-- 8. Аварийный молоток -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="glass_hammer" data-title="Аварийный молоток"
+                     ondragstart="window.carouselEngine.handleDragStart(event, 'glass_hammer', 'Аварийный молоток')"
+                     ondragend="window.carouselEngine.handleDragEnd(event)"
+                     onclick="window.carouselEngine.useEquipment('glass_hammer', 'Взять аварийный молоток')"
+                     title="Разбить защитное стекло выхода при блокировке дверей">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(236, 72, 153, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/glass_hammer.svg' %}" alt="Аварийный молоток" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #f472b6;">Молоток</div>
+                    <div class="vsm-tactile-sub">Аварийный выход</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Пульт управления проводника: Радиосвязь PTT, частотный визуализатор, свободный ввод и быстрые решения -->
+    <div class="vsm-conductor-console">
+        <!-- Верхняя статусная строка пульта -->
+        <div class="vsm-console-topline">
+            <div id="carousel-ai-status-pill" class="vsm-live-status-indicator" style="margin-bottom: 0;">
+                <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+                <span id="carousel-ai-status-text">Нейросетевой ассистент • Голосовой эфир готов</span>
+            </div>
+            <div class="vsm-console-topline-right">
+                <button type="button" id="carousel-req-hint-btn" class="vsm-hint-req-btn" onclick="window.carouselEngine.requestHint()" title="Запросить тактическую подсказку у ИИ-наставника ВСМ">
+                    <i data-lucide="help-circle" style="width: 13px; height: 13px;"></i>
+                    <span>Подсказка</span>
+                </button>
+                <div class="vsm-sto-label">
+                    <i data-lucide="radio" style="width: 14px; height: 14px; color: var(--vsm-cyan);"></i>
+                    <span>Бортовая радиосвязь ВСМ</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Тело пульта: PTT микрофон + Свободный ввод + Быстрые решения -->
+        <div class="vsm-console-body-grid">
+            <!-- Секция Push-To-Talk микрофона -->
+            <div class="vsm-ptt-box">
+                <div class="vsm-ptt-row">
+                    <button type="button" id="carousel-mic-btn" class="vsm-ptt-btn" onclick="window.carouselEngine.toggleVoiceRecording()" title="Нажмите для голосовой передачи (Бортовая радиосвязь)">
+                        <i data-lucide="mic" style="width: 24px; height: 24px;"></i>
+                    </button>
+                    <div class="vsm-ptt-info">
+                        <div id="carousel-mic-status" class="vsm-mic-status-label">
+                            Нажмите и говорите
+                        </div>
+                        <canvas id="carousel-mic-canvas" class="vsm-mic-canvas" width="160" height="20"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Секция свободного ввода и протокольных решений -->
+            <div class="vsm-conductor-input-col">
+                <!-- Форма текстового ввода: прямая отправка и редактирование распознанной речи -->
+                <form id="carousel-text-form" onsubmit="window.carouselEngine.sendTextTurn(event);" class="vsm-text-box">
+                    <input type="text" id="carousel-text-input" class="vsm-text-input" placeholder="Введите слова проводника или говорите в микрофон..." autocomplete="off" oninput="window.carouselEngine.onTextInputChange()">
+                    <button type="submit" id="carousel-text-send-btn" class="vsm-text-send-btn" style="display: none;">
+                        <i data-lucide="send" style="width: 15px; height: 15px;"></i>
+                        <span>Сказать</span>
+                    </button>
+                </form>
+
+                <!-- Панель тактических подсказок ИИ (появляется только по запросу проводника или по решению ИИ) -->
+                <div id="carousel-ai-hints-panel" class="vsm-ai-hints-panel" style="display: none; margin-top: 0.75rem;">
+                    <div class="vsm-hints-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; padding: 0.35rem 0.6rem; background: rgba(0, 210, 255, 0.08); border-radius: 6px; border: 1px solid rgba(0, 210, 255, 0.2);">
+                        <div class="vsm-hints-title-wrap" style="display: flex; align-items: center; gap: 0.4rem;">
+                            <span class="vsm-hints-badge" style="font-size: 0.75rem; font-weight: 800; color: var(--vsm-cyan); display: inline-flex; align-items: center; gap: 4px;">
+                                <i data-lucide="lightbulb" style="width: 13px; height: 13px;"></i>
+                                <span>ИИ-Ассистент • Рекомендации</span>
+                            </span>
+                            <span id="carousel-ai-hint-reason" class="vsm-hints-reason-text" style="font-size: 0.72rem; color: #94a3b8;">Эксперт ВСМ рекомендует следующие действия</span>
+                        </div>
+                        <button type="button" class="vsm-hints-close-btn" onclick="window.carouselEngine.hideHintsPanel()" title="Скрыть подсказку" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.9rem;">✕</button>
+                    </div>
+                    <div id="choices-container" class="vsm-protocol-grid">
+                        <!-- Генерируются динамически через JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО 1: ИНСТРУКТАЖ И НАЧАЛО СМЕНЫ -->
+<div id="briefing-modal" class="vsm-modal-backdrop" style="display: none;">
+    <div class="vsm-modal-box">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(0, 210, 255, 0.15); border: 1px solid var(--vsm-cyan); display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="gauge" style="width: 24px; height: 24px; color: var(--vsm-cyan);"></i>
+            </div>
+            <div>
+                <h3 style="font-size: 1.35rem; font-weight: 800; color: #fff;">Бесконечная смена: Карусель решений</h3>
+                <div style="font-size: 0.8rem; color: #94a3b8;">Квалификационный тренажер проводников ВСМ-1</div>
+            </div>
+        </div>
+
+        <div style="font-size: 0.92rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 1.5rem;">
+            <p style="margin-bottom: 0.75rem;">
+                В этом режиме вам предстоит непрерывно решать реальные нештатные ситуации на борту скоростного поезда «Белый кречет».
+            </p>
+            <ul style="padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <li><strong>Шкала сложности:</strong> ситуации развиваются от штатных сервисных операций до комплексных отказов и экстренной помощи.</li>
+                <li><strong>Динамический стрик:</strong> правильные ответы подряд разгоняют состав и множитель очков (до 5x).</li>
+                <li><strong>Нормативная база:</strong> все кейсы составлены по официальным билетам проводника 4-го разряда и отраслевым Правилам перевозок скоростных поездов.</li>
+                <li><strong>Контроль параметров рейса:</strong> ошибка обнуляет стрик и снижает скорость. Падение безопасности ниже 20% или запредельный стресс приводят к сходу со смены.</li>
+            </ul>
+        </div>
+
+        <!-- Рекорды проводника -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.75rem;">
+            <div style="background: rgba(255, 255, 255, 0.04); border-radius: 12px; padding: 0.8rem; text-align: center;">
+                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase;">Лучший стрик</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: #ff4d6d;">{{ best_streak }}</div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.04); border-radius: 12px; padding: 0.8rem; text-align: center;">
+                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase;">Максимум кейсов</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: var(--vsm-cyan);">{{ max_solved }}</div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.04); border-radius: 12px; padding: 0.8rem; text-align: center;">
+                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase;">Рекорд очков</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: #facc15;">{{ max_score }}</div>
+            </div>
+        </div>
+
+        <!-- Выбор класса обслуживания для смены -->
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem;">
+            <label style="display: block; font-size: 0.8rem; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.6rem;">
+                Класс обслуживания вагонов на эту смену:
+            </label>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem;" id="shift-class-selector">
+                <button type="button" class="vsm-shift-class-btn {% if conductor_track == 'economy' %}active{% endif %}" data-class="economy" onclick="selectShiftClass('economy')" style="padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; text-align: center; border: 1px solid {% if conductor_track == 'economy' %}var(--vsm-cyan){% else %}rgba(0, 210, 255, 0.3){% endif %}; background: rgba(0, 210, 255, 0.08); color: var(--vsm-cyan); display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+                    <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
+                    <span>Эконом</span>
+                </button>
+                <button type="button" class="vsm-shift-class-btn {% if conductor_track == 'comfort' %}active{% endif %}" data-class="comfort" onclick="selectShiftClass('comfort')" style="padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; text-align: center; border: 1px solid {% if conductor_track == 'comfort' %}#10b981{% else %}rgba(16, 185, 129, 0.3){% endif %}; background: rgba(16, 185, 129, 0.08); color: #10b981; display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+                    <i data-lucide="smile" style="width: 16px; height: 16px;"></i>
+                    <span>Комфорт</span>
+                </button>
+                <button type="button" class="vsm-shift-class-btn {% if conductor_track == 'business' %}active{% endif %}" data-class="business" onclick="selectShiftClass('business')" style="padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; text-align: center; border: 1px solid {% if conductor_track == 'business' %}#f59e0b{% else %}rgba(245, 158, 11, 0.3){% endif %}; background: rgba(245, 158, 11, 0.08); color: #facc15; display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+                    <i data-lucide="crown" style="width: 16px; height: 16px;"></i>
+                    <span>Бизнес</span>
+                </button>
+                <button type="button" class="vsm-shift-class-btn {% if not conductor_track or conductor_track == 'all' %}active{% endif %}" data-class="all" onclick="selectShiftClass('all')" style="padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; text-align: center; border: 1px solid {% if not conductor_track or conductor_track == 'all' %}#818cf8{% else %}rgba(165, 180, 252, 0.3){% endif %}; background: rgba(99, 102, 241, 0.08); color: #a5b4fc; display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+                    <i data-lucide="train" style="width: 16px; height: 16px;"></i>
+                    <span>Все классы</span>
+                </button>
+            </div>
+            <input type="hidden" id="chosen-shift-service-class" value="{{ conductor_track|default:'all' }}">
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <button onclick="closeBriefingModal()" class="vsm-btn vsm-btn-outline" style="padding: 0.7rem 1.25rem;">
+                Понятно
+            </button>
+            <button onclick="startNewShift()" class="vsm-btn vsm-btn-primary" style="padding: 0.7rem 1.75rem;">
+                <i data-lucide="play" style="width: 16px; height: 16px;"></i>
+                <span>Заступить на смену</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО 2: ДЕБРИФИНГ / ИТОГИ СМЕНЫ -->
+<div id="debrief-modal" class="vsm-modal-backdrop" style="display: none;">
+    <div class="vsm-modal-box" style="max-width: 680px; position: relative;">
+        <!-- Кнопка закрытия модалки с переходом на главный экран -->
+        <button type="button" onclick="closeDebriefModal(true)" style="position: absolute; top: 1.25rem; right: 1.25rem; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #94a3b8; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; z-index: 10;" title="Закрыть и перейти на главный пульт" onmouseover="this.style.color='#fff'; this.style.borderColor='var(--vsm-cyan)';" onmouseout="this.style.color='#94a3b8'; this.style.borderColor='rgba(255,255,255,0.15)';">
+            <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+        </button>
+
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div id="debrief-icon-box" style="width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 0.75rem; display: flex; align-items: center; justify-content: center; background: rgba(16, 185, 129, 0.2); border: 2px solid #10b981;">
+                <i id="debrief-icon" data-lucide="check-circle" style="width: 32px; height: 32px; color: #10b981;"></i>
+            </div>
+            <div style="margin-bottom: 0.6rem;">
+                <span id="debrief-badge" style="display: inline-block; padding: 0.35rem 0.9rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399;">
+                    Безупречная смена
+                </span>
+            </div>
+            <h3 id="debrief-title" style="font-size: 1.55rem; font-weight: 800; color: #fff; margin-bottom: 0.35rem;">
+                Смена успешно завершена!
+            </h3>
+            <p id="debrief-subtitle" style="font-size: 0.88rem; color: #94a3b8; line-height: 1.5; max-width: 520px; margin: 0 auto;">
+                Вагон сдан в соответствии с регламентом ВСМ «Белый кречет».
+            </p>
+        </div>
+
+        <!-- Сетка итогов смены -->
+        <div class="vsm-debrief-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.25rem;">
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase;">Станций рейса</div>
+                <div id="debrief-stations" style="font-size: 1.35rem; font-weight: 900; color: #fff; margin-top: 0.25rem;">8 / 8</div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase;">Замечаний / Ошибок</div>
+                <div id="debrief-mistakes" style="font-size: 1.35rem; font-weight: 900; color: #10b981; margin-top: 0.25rem;">0</div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase;">Макс. стрик</div>
+                <div id="debrief-streak" style="font-size: 1.35rem; font-weight: 900; color: #ff4d6d; margin-top: 0.25rem;">0</div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase;">Набрано очков</div>
+                <div id="debrief-score" style="font-size: 1.35rem; font-weight: 900; color: var(--vsm-cyan); margin-top: 0.25rem;">0</div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase;">Получено опыта</div>
+                <div id="debrief-xp" style="font-size: 1.35rem; font-weight: 900; color: #facc15; margin-top: 0.25rem;">+0 XP</div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase;">Уровень проводника</div>
+                <div id="debrief-level" style="font-size: 1.35rem; font-weight: 900; color: #38bdf8; margin-top: 0.25rem;">{{ conductor.level }} ур.</div>
+            </div>
+        </div>
+
+        <!-- Инфо о смене проводника в реестре -->
+        <div id="debrief-shifts-registry" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 0.8rem 1.1rem; margin-bottom: 1.35rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.88rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; color: #cbd5e1;">
+                <i data-lucide="award" style="width: 18px; height: 18px; color: #facc15;"></i>
+                <span>Послужной список смен:</span>
+            </div>
+            <div style="font-weight: 700; color: #fff;">
+                <span id="debrief-perfect-shifts" style="color: #10b981;">{{ conductor.perfect_shifts }}</span> безупречных из <span id="debrief-total-shifts">{{ conductor.shifts_completed }}</span> смен
+            </div>
+        </div>
+
+        <!-- Блок подробного разбора при сходе со смены -->
+        <div id="debrief-failure-details" style="display: none; background: rgba(253, 3, 58, 0.08); border-left: 4px solid #fd033a; border-radius: 0 10px 10px 0; padding: 1rem 1.25rem; margin-bottom: 1.5rem; text-align: left;">
+            <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #f87171; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
+                <i data-lucide="alert-octagon" style="width: 14px; height: 14px;"></i>
+                <span>Причина схода с линии • Критический сбой</span>
+            </div>
+            <div id="debrief-failure-why" style="font-size: 0.88rem; color: #fca5a5; line-height: 1.55; margin-bottom: 0.45rem;"></div>
+            <div id="debrief-failure-reg" style="font-size: 0.82rem; color: #fbbf24; font-weight: 600;"></div>
+        </div>
+
+        <!-- Блок ведомости замечаний по смене -->
+        <div id="debrief-remarks-container" style="display: none; margin-bottom: 1.5rem; text-align: left;">
+            <div style="font-size: 0.76rem; text-transform: uppercase; font-weight: 800; color: #38bdf8; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">
+                <i data-lucide="clipboard-list" style="width: 14px; height: 14px;"></i>
+                <span>Ведомость замечаний по смене (СТО ВСМ 03.011-2026)</span>
+            </div>
+            <div id="debrief-remarks-list"></div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="{% url 'simulator:dashboard' %}" class="vsm-btn vsm-btn-outline" style="padding: 0.75rem 1.5rem;">
+                <i data-lucide="layout-dashboard" style="width: 16px; height: 16px;"></i>
+                <span>Главный пульт</span>
+            </a>
+            <button id="debrief-next-shift-btn" onclick="startNewShift()" class="vsm-btn vsm-btn-primary" style="padding: 0.75rem 1.75rem;">
+                <i data-lucide="play" style="width: 16px; height: 16px;"></i>
+                <span id="debrief-next-shift-text">Заступить на новую смену</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО 3: РАЗБОР ОШИБКИ И НАРУШЕНИЯ РЕГЛАМЕНТА В КАРУСЕЛИ -->
+<div id="mistake-modal" class="vsm-modal-backdrop" style="display: none;">
+    <div class="vsm-modal-box" style="border: 2px solid rgba(253, 3, 58, 0.6); box-shadow: 0 0 50px rgba(253, 3, 58, 0.35); max-width: 660px;">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem;">
+            <div>
+                <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(253, 3, 58, 0.2); border: 1px solid #fd033a; color: #ff6b8b; font-size: 0.72rem; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 6px; text-transform: uppercase; margin-bottom: 0.5rem;">
+                    <i data-lucide="alert-triangle" style="width: 14px; height: 14px;"></i>
+                    <span id="mistake-badge-text">Нарушение регламента ВСМ</span>
+                </div>
+                <h3 id="mistake-challenge-title" style="font-size: 1.35rem; font-weight: 800; color: #fff; line-height: 1.3;">
+                    Анализ ошибки проводника
+                </h3>
+            </div>
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(253, 3, 58, 0.2); border: 1px solid #fd033a; display: flex; align-items: center; justify-content: center; color: #fd033a; flex-shrink: 0;">
+                <i data-lucide="shield-alert" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+
+        <div style="max-height: 60vh; overflow-y: auto; padding-right: 0.25rem;">
+            <!-- Где ошибся -->
+            <div style="background: rgba(253, 3, 58, 0.08); border-left: 4px solid #fd033a; border-radius: 0 10px 10px 0; padding: 1rem 1.25rem; margin-bottom: 1rem;">
+                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #f87171; letter-spacing: 0.05em; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="x-circle" style="width: 14px; height: 14px;"></i>
+                    <span>Где вы ошиблись</span>
+                </div>
+                <div id="mistake-user-choice" style="font-size: 0.95rem; font-weight: 700; color: #ffffff; line-height: 1.5; margin-bottom: 0.4rem;"></div>
+                <div id="mistake-why-wrong" style="font-size: 0.86rem; color: #fca5a5; line-height: 1.55;"></div>
+            </div>
+
+            <!-- Нарушенный регламент -->
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.9rem 1.25rem; margin-bottom: 1rem; display: flex; align-items: flex-start; gap: 0.85rem;">
+                <i data-lucide="book-marked" style="width: 20px; height: 20px; color: #f59e0b; flex-shrink: 0; margin-top: 2px;"></i>
+                <div>
+                    <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #fbbf24; letter-spacing: 0.05em;">
+                        Нарушенный регламент / Стандарт ВСМ
+                    </div>
+                    <div id="mistake-regulation" style="font-size: 0.88rem; color: #cbd5e1; margin-top: 0.25rem; font-weight: 600; line-height: 1.45;"></div>
+                </div>
+            </div>
+
+            <!-- Эталонное решение -->
+            <div style="background: rgba(16, 185, 129, 0.08); border-left: 4px solid #10b981; border-radius: 0 10px 10px 0; padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #34d399; letter-spacing: 0.05em; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+                    <span>Как следовало поступить (Эталонное решение)</span>
+                </div>
+                <div id="mistake-correct-action" style="font-size: 0.92rem; font-weight: 700; color: #ffffff; line-height: 1.5; margin-bottom: 0.3rem;"></div>
+                <div id="mistake-correct-hint" style="font-size: 0.84rem; color: #d1fae5; line-height: 1.5;"></div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <button id="mistake-continue-btn" class="vsm-btn vsm-btn-primary" style="padding: 0.75rem 1.75rem; background: var(--vsm-primary); border-color: var(--vsm-cyan);">
+                <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                <span>Понятно, продолжить рейс</span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+window.VSM_CONDUCTOR_AVATAR = "{% static 'simulator/img/' %}{{ conductor.avatar|default:'avatar_1.svg' }}";
+
+function formatCleanDialogue(text) {
+    if (!text) return '';
+    let s = String(text).trim();
+    while (true) {
+        let changed = false;
+        if ((s.startsWith('«') && s.endsWith('»')) ||
+            (s.startsWith('"') && s.endsWith('"')) ||
+            (s.startsWith('“') && s.endsWith('”')) ||
+            (s.startsWith('„') && s.endsWith('“')) ||
+            (s.startsWith("'") && s.endsWith("'"))) {
+            s = s.slice(1, -1).trim();
+            changed = true;
+        }
+        if (/^[«"“„']/.test(s)) {
+            s = s.slice(1).trim();
+            changed = true;
+        }
+        if (/[»"”'„]$/.test(s)) {
+            s = s.slice(0, -1).trim();
+            changed = true;
+        }
+        if (!changed) break;
+    }
+    return s ? `«${s}»` : '';
+}
+
+/**
+ * Движок бесконечной скоростной карусели решений ВСМ «Белый кречет»
+ */
+class EndlessCarouselEngine {
+    constructor() {
+        this.sessionId = null;
+        this.currentChallenge = null;
+        this.timerInterval = null;
+        this.remainingSeconds = 25;
+        this.totalSeconds = 25;
+        this.isProcessing = false;
+        
+        // Аудио движок
+        this.audio = window.vsmAudio;
+
+        // Микрофон и голосовое распознавание
+        this.isRecording = false;
+        this.recordedTranscript = '';
+        this.mediaRecorder = null;
+        this.audioChunks = [];
+        this.speechRecognition = null;
+        this.micStream = null;
+        this.visCtx = null;
+        this.analyser = null;
+        this.visAnimId = null;
+
+        // История диалога
+        this.historyLog = [];
+    }
+
+    init() {
+        // Проверяем URL параметры на запуск конкретного кейса
+        const urlParams = new URLSearchParams(window.location.search);
+        const challengeIdParam = urlParams.get('challenge_id');
+        if (challengeIdParam) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+            this.startNewShift(parseInt(challengeIdParam));
+            this.bindKeyboard();
+            this.initSpeechRecognition();
+            this.bindInputEvents();
+            return;
+        }
+
+        // Проверяем, есть ли активная сессия на сервере
+        {% if active_session %}
+            this.sessionId = {{ active_session.id }};
+            this.loadSessionState();
+        {% else %}
+            this.startNewShift();
+        {% endif %}
+
+        if (this.audio && this.audio.startTrainAmbient) {
+            this.audio.startTrainAmbient();
+        }
+
+        this.bindKeyboard();
+        this.initSpeechRecognition();
+        this.bindInputEvents();
+        this.initClock();
+        this.initTouchDragAndDrop();
+    }
+
+    bindKeyboard() {
+        // Клавиатурные клавиши 1, 2, 3, 4 для скоростного реагирования
+        document.addEventListener('keydown', (e) => {
+            if (this.isProcessing || !this.currentChallenge) return;
+            // Не перехватываем, если проводник печатает в поле ввода
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+
+            const keyNum = parseInt(e.key);
+            if (keyNum >= 1 && keyNum <= 4) {
+                const choiceIdx = keyNum - 1;
+                const buttons = document.querySelectorAll('.vsm-endless-choice-btn');
+                if (buttons[choiceIdx]) {
+                    buttons[choiceIdx].click();
+                } else if (this.currentChoices && this.currentChoices[choiceIdx]) {
+                    this.makeChoice(choiceIdx);
+                }
+            }
+        });
+    }
+
+
+    bindInputEvents() {
+        // Пауза таймера при наборе текста проводником
+        const txtInput = document.getElementById('carousel-text-input');
+        const micText = document.getElementById('carousel-mic-text');
+
+        if (txtInput) {
+            txtInput.addEventListener('focus', () => {
+                if (!this.isProcessing) this.stopTimer();
+            });
+            txtInput.addEventListener('input', (e) => {
+                if (!this.isProcessing) this.stopTimer();
+                if (micText && 'value' in micText) {
+                    micText.value = e.target.value;
+                }
+            });
+            txtInput.addEventListener('blur', () => {
+                if (!this.isProcessing && !txtInput.value.trim() && !this.isRecording) {
+                    this.startTimer(this.remainingSeconds || 20);
+                }
+            });
+        }
+
+        if (micText) {
+            micText.addEventListener('input', (e) => {
+                this.stopTimer();
+                this.recordedTranscript = e.target.value;
+                if (txtInput) txtInput.value = e.target.value;
+            });
+            micText.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.sendRecordedVoice();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    this.cancelVoiceRecording(true);
+                }
+            });
+        }
+    }
+
+    setAiStatus(text) {
+        const el = document.getElementById('carousel-ai-status-text');
+        if (el) el.textContent = text;
+    }
+
+    stopTimer() {
+        clearInterval(this.timerInterval);
+        this.timerInterval = null;
+    }
+
+    startNewShift(challengeId = null, serviceClass = null) {
+        if (this.audio) {
+            this.audio.stopSpeech();
+            if (this.audio.startTrainAmbient) this.audio.startTrainAmbient();
+        }
+        this.cancelVoiceRecording(false);
+        this.stopTimer();
+        this.recordedTranscript = '';
+
+        const bModal = document.getElementById('briefing-modal');
+        if (bModal) bModal.style.display = 'none';
+        const dModal = document.getElementById('debrief-modal');
+        if (dModal) dModal.style.display = 'none';
+        const mModal = document.getElementById('mistake-modal');
+        if (mModal) mModal.style.display = 'none';
+
+        this.isProcessing = true;
+        this.setButtonsDisabled(true);
+
+        const payload = {};
+        if (challengeId) {
+            payload.challenge_id = challengeId;
+        }
+        const chosenCls = serviceClass || (document.getElementById('chosen-shift-service-class') ? document.getElementById('chosen-shift-service-class').value : null);
+        if (chosenCls) {
+            payload.service_class = chosenCls;
+        }
+
+        fetch("{% url 'simulator:api_endless_start' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': this.getCsrfToken()
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            this.isProcessing = false;
+            if (data.success) {
+                this.sessionId = data.session_id;
+                this.updateHud(data);
+                const solvedEl = document.getElementById('card-solved-count');
+                if (solvedEl) solvedEl.textContent = '1';
+                this.renderChallenge(data.challenge);
+                this.setButtonsDisabled(false);
+                const finishBtn = document.getElementById('finish-shift-btn');
+                if (finishBtn) finishBtn.style.display = 'inline-flex';
+            } else {
+                this.setButtonsDisabled(false);
+                window.vsmAlert(data.error || 'Ошибка старта смены');
+            }
+        })
+        .catch(err => {
+            this.isProcessing = false;
+            this.setButtonsDisabled(false);
+            console.error('Ошибка запуска смены карусели:', err);
+        });
+    }
+
+    loadSessionState() {
+        fetch(`/api/endless/${this.sessionId}/state/`)
+        .then(res => res.json())
+        .then(data => {
+            this.isProcessing = false;
+            this.setButtonsDisabled(false);
+            if (data.success && data.status === 'active' && data.challenge) {
+                this.updateHud(data);
+                this.renderChallenge(data.challenge);
+                const finishBtn = document.getElementById('finish-shift-btn');
+                if (finishBtn) finishBtn.style.display = 'inline-flex';
+            } else {
+                this.startNewShift();
+            }
+        })
+        .catch(() => {
+            this.isProcessing = false;
+            this.setButtonsDisabled(false);
+            this.startNewShift();
+        });
+    }
+
+    updateHud(data) {
+        // Скорость поезда
+        const speedEl = document.getElementById('hud-speed');
+        const targetSpeed = Math.max(0, parseInt(data.current_speed !== undefined ? data.current_speed : 260, 10));
+        if (speedEl) speedEl.textContent = targetSpeed;
+
+        // Табло скорости вагона в LED строке (синхронизация ID)
+        const ledSpeed = document.getElementById('led-live-speed') || document.getElementById('carousel-car-speed');
+        if (ledSpeed) ledSpeed.textContent = targetSpeed;
+
+        // Синхронизация табло станции (LED строка и карточка)
+        const solved = data.challenges_solved || 0;
+        const mistakes = data.mistakes_count || 0;
+        const currentStation = Math.min(8, Math.max(1, solved + mistakes + 1));
+        const ledStationEl = document.getElementById('led-station-count');
+        if (ledStationEl) ledStationEl.textContent = currentStation;
+        const cardSolvedEl = document.getElementById('card-solved-count');
+        if (cardSolvedEl) cardSolvedEl.textContent = currentStation;
+
+        // Синхронизация названия вагона в LED строке
+        const ledCar = document.getElementById('led-car-info');
+        if (ledCar) {
+            if (data.challenge && data.challenge.car_info) {
+                ledCar.textContent = data.challenge.car_info.toUpperCase();
+            } else if (data.service_class) {
+                const scName = data.service_class === 'business' ? 'БИЗНЕС' : data.service_class === 'comfort' ? 'КОМФОРТ' : data.service_class === 'economy' ? 'ЭКОНОМ' : 'СТАНДАРТ';
+                ledCar.textContent = `ВАГОН (${scName})`;
+            }
+        }
+
+        // Уровень сложности и тег с динамической скоростью
+        const tierBadge = document.getElementById('hud-tier-badge');
+        const tierText = document.getElementById('hud-tier-text');
+        if (tierBadge && tierText) {
+            if (targetSpeed >= 390) {
+                tierText.textContent = `Уровень 5 • Предельный экстрим (${targetSpeed} км/ч)`;
+                tierBadge.style.color = "#fd033a";
+                tierBadge.style.borderColor = "rgba(253, 3, 58, 0.5)";
+            } else if (targetSpeed >= 370) {
+                tierText.textContent = `Уровень 4 • Высокий стресс (${targetSpeed} км/ч)`;
+                tierBadge.style.color = "#f97316";
+                tierBadge.style.borderColor = "rgba(249, 115, 22, 0.5)";
+            } else if (targetSpeed >= 340) {
+                tierText.textContent = `Уровень 3 • Конфликты и сбои (${targetSpeed} км/ч)`;
+                tierBadge.style.color = "#eab308";
+                tierBadge.style.borderColor = "rgba(234, 179, 8, 0.5)";
+            } else if (targetSpeed >= 290) {
+                tierText.textContent = `Уровень 2 • Напряженная посадка (${targetSpeed} км/ч)`;
+                tierBadge.style.color = "#00d2ff";
+                tierBadge.style.borderColor = "rgba(0, 210, 255, 0.5)";
+            } else {
+                tierText.textContent = `Уровень 1 • Штатный рейс (${targetSpeed} км/ч)`;
+                tierBadge.style.color = "#10b981";
+                tierBadge.style.borderColor = "rgba(16, 185, 129, 0.5)";
+            }
+        }
+
+        // Профиль проводника и смена
+        if (data.conductor_level !== undefined) {
+            const lvlEl = document.getElementById('hud-conductor-level');
+            if (lvlEl) lvlEl.textContent = data.conductor_level;
+        }
+        if (data.conductor_rank) {
+            const rankEl = document.getElementById('hud-conductor-rank');
+            if (rankEl) rankEl.textContent = data.conductor_rank;
+        }
+        if (data.shift_number) {
+            const shiftNumEl = document.getElementById('hud-shift-num');
+            if (shiftNumEl) shiftNumEl.textContent = `Смена №${data.shift_number}`;
+        }
+        const shiftProgEl = document.getElementById('hud-shift-progress');
+        if (shiftProgEl) {
+            const target = data.target_challenges_count || 8;
+            shiftProgEl.textContent = `${solved}/${target}`;
+        }
+        if (data.perfect_shifts !== undefined) {
+            const perfEl = document.getElementById('hud-perfect-shifts');
+            if (perfEl) perfEl.textContent = data.perfect_shifts;
+        }
+        if (data.shifts_completed !== undefined) {
+            const totalEl = document.getElementById('hud-shifts-completed');
+            if (totalEl) totalEl.textContent = data.shifts_completed;
+        }
+
+        // Стрик и множитель
+        const streakEl = document.getElementById('hud-streak');
+        const multEl = document.getElementById('hud-multiplier');
+        const streakContainer = document.getElementById('hud-streak-container');
+        const streakVal = data.current_streak !== undefined ? data.current_streak : (data.streak !== undefined ? data.streak : 0);
+        if (streakEl) {
+            const oldStreak = parseInt(streakEl.textContent, 10) || 0;
+            streakEl.textContent = streakVal;
+            if (streakVal > oldStreak) {
+                streakEl.classList.remove('vsm-pop-anim');
+                void streakEl.offsetWidth;
+                streakEl.classList.add('vsm-pop-anim');
+            }
+        }
+
+        const multVal = data.multiplier !== undefined ? data.multiplier : 1.0;
+        if (multEl) {
+            const multNum = typeof multVal === 'number' ? multVal : (parseFloat(multVal) || 1.0);
+            multEl.textContent = `x${multNum.toFixed(1)} МНОЖИТЕЛЬ`;
+            if (multNum > 1.0) {
+                multEl.style.background = '#fd033a';
+                multEl.style.color = '#ffffff';
+                multEl.style.boxShadow = '0 0 10px rgba(253, 3, 58, 0.5)';
+            } else {
+                multEl.style.background = 'rgba(253, 3, 58, 0.2)';
+                multEl.style.color = '#ff6b8b';
+                multEl.style.boxShadow = 'none';
+            }
+        }
+
+        if (streakContainer) {
+            if (streakVal >= 5) {
+                streakContainer.classList.add('hot');
+            } else {
+                streakContainer.classList.remove('hot');
+            }
+        }
+
+        // Счет и XP
+        const scoreEl = document.getElementById('hud-score');
+        const scoreContainer = document.getElementById('hud-score-container');
+        const scoreVal = data.total_score !== undefined ? data.total_score : (data.score !== undefined ? data.score : 0);
+        if (scoreEl) {
+            const oldScore = parseInt(scoreEl.textContent.replace(/\s/g, ''), 10) || 0;
+            scoreEl.textContent = Number(scoreVal).toLocaleString('ru-RU');
+            if (scoreVal > oldScore && scoreContainer) {
+                scoreContainer.classList.remove('vsm-pulse-cyan');
+                void scoreContainer.offsetWidth;
+                scoreContainer.classList.add('vsm-pulse-cyan');
+            }
+        }
+        const xpEl = document.getElementById('hud-xp');
+        const xpVal = data.earned_xp !== undefined ? data.earned_xp : (data.xp !== undefined ? data.xp : 0);
+        if (xpEl) xpEl.textContent = `+${xpVal} XP`;
+
+
+        // Шкалы состояния
+        this.setVital('loyalty', data.current_loyalty || 85);
+        this.setVital('safety', data.current_safety || 95);
+        this.setVital('service', data.current_service || 85);
+        this.setVital('stress', data.current_stress || 15);
+
+        // Кнопка сдачи вагона
+        const solvedCount = data.challenges_solved || 0;
+        if (solvedCount >= 2) {
+            const finishBtn = document.getElementById('finish-shift-btn');
+            if (finishBtn) finishBtn.style.display = 'inline-flex';
+        }
+    }
+
+    setVital(name, val) {
+        const textEl = document.getElementById(`val-${name}`);
+        const barEl = document.getElementById(`bar-${name}`);
+        if (textEl) textEl.textContent = `${val}%`;
+        if (barEl) barEl.style.width = `${Math.min(100, Math.max(0, val))}%`;
+    }
+
+    showDeltas(deltas) {
+        if (!deltas) return;
+        ['loyalty', 'safety', 'service', 'stress'].forEach(metric => {
+            const deltaVal = deltas[metric];
+            if (deltaVal !== undefined && deltaVal !== 0) {
+                const deltaEl = document.getElementById(`delta-${metric}`);
+                if (deltaEl) {
+                    const sign = deltaVal > 0 ? '+' : '';
+                    deltaEl.textContent = `${sign}${deltaVal}`;
+                    deltaEl.className = `vsm-delta-popup show-delta ${deltaVal > 0 ? 'vsm-delta-positive' : 'vsm-delta-negative'}`;
+                    setTimeout(() => {
+                        deltaEl.className = 'vsm-delta-popup';
+                    }, 1200);
+                }
+            }
+        });
+    }
+
+    renderChallenge(challenge) {
+        if (!challenge) return;
+        this.currentChallenge = challenge;
+        this.isProcessing = false;
+        this.setButtonsDisabled(false);
+        this.cancelVoiceRecording(false);
+        this.recordedTranscript = '';
+
+        const micPreview = document.getElementById('carousel-mic-preview');
+        if (micPreview) micPreview.style.display = 'none';
+        const micSendBar = document.getElementById('carousel-mic-send-bar');
+        if (micSendBar) micSendBar.style.display = 'none';
+        const micText = document.getElementById('carousel-mic-text');
+        if (micText) {
+            if ('value' in micText) micText.value = '';
+            else micText.textContent = 'Слушаю вас...';
+        }
+        const textInput = document.getElementById('carousel-text-input');
+        if (textInput) textInput.value = '';
+        const micBtn = document.getElementById('carousel-mic-btn');
+        if (micBtn) {
+            micBtn.classList.remove('recording');
+            micBtn.disabled = false;
+        }
+        const micStatus = document.getElementById('carousel-mic-status');
+        if (micStatus) micStatus.textContent = 'Нажмите и говорите';
+
+        const card = document.getElementById('challenge-card');
+
+        // Плавная анимация появления
+        card.classList.remove('anim-exit');
+        card.classList.add('anim-enter');
+        void card.offsetWidth;
+        card.classList.remove('anim-enter');
+
+        // Сброс подсказки дроп-зоны
+        const dropText = document.getElementById('carousel-drop-target-text');
+        if (dropText) {
+            dropText.textContent = 'Зона действия в вагоне: перетащите сюда предмет или кликните по оборудованию';
+        }
+
+        // Заполнение полей
+        document.getElementById('card-title').textContent = challenge.title;
+        document.getElementById('card-situation-text').textContent = challenge.situation_text;
+        document.getElementById('card-car-badge').textContent = challenge.car_info;
+        const ledCarInfo = document.getElementById('led-car-info');
+        if (ledCarInfo && challenge.car_info) {
+            ledCarInfo.textContent = challenge.car_info.toUpperCase();
+        }
+
+        // Динамическая температура салона вагона
+        this.updateDynamicTemperature(challenge);
+        const speedEl = document.getElementById('hud-speed');
+        if (speedEl && (!speedEl.textContent || speedEl.textContent.trim() === '' || speedEl.textContent === '0') && challenge.train_speed) {
+            speedEl.textContent = challenge.train_speed;
+            const ledSpeed = document.getElementById('led-live-speed') || document.getElementById('carousel-car-speed');
+            if (ledSpeed) ledSpeed.textContent = challenge.train_speed;
+        }
+        
+        // Сложность
+        const diffBadge = document.getElementById('card-diff-badge');
+        diffBadge.textContent = `Уровень ${challenge.difficulty_level}`;
+        const diffColors = { 1: '#10b981', 2: '#00d2ff', 3: '#eab308', 4: '#f97316', 5: '#fd033a' };
+        diffBadge.style.background = diffColors[challenge.difficulty_level] || '#082a99';
+
+        // Класс обслуживания
+        const serviceBadge = document.getElementById('card-service-badge');
+        const serviceText = document.getElementById('card-service-text');
+        if (serviceBadge) {
+            const sc = challenge.service_class || (challenge.service_class_badge ? challenge.service_class_badge.code : 'all');
+            const scMap = {
+                'economy': { label: 'Эконом', cls: 'vsm-badge-track-economy', icon: 'shield-check' },
+                'comfort': { label: 'Комфорт', cls: 'vsm-badge-track-comfort', icon: 'smile' },
+                'business': { label: 'Бизнес', cls: 'vsm-badge-track-business', icon: 'crown' },
+                'all': { label: 'Общепоездной', cls: 'vsm-badge-track-all', icon: 'train' }
+            };
+            const meta = scMap[sc] || scMap['all'];
+            serviceBadge.className = `vsm-service-pill ${meta.cls}`;
+            serviceBadge.style.display = 'inline-flex';
+            if (serviceText) serviceText.textContent = meta.label;
+            const iconEl = serviceBadge.querySelector('i');
+            if (iconEl) iconEl.setAttribute('data-lucide', meta.icon);
+        }
+
+        // Источник задачи (сюжетный сценарий или карусель)
+        const srcBadge = document.getElementById('card-source-badge');
+        const srcText = document.getElementById('card-source-text');
+        if (challenge.source_type === 'scenario') {
+            if (srcBadge) srcBadge.style.display = 'inline-flex';
+            if (srcText) srcText.textContent = challenge.source_scenario_title ? `Из сценария: ${challenge.source_scenario_title}` : 'Из сценария';
+        } else {
+            if (srcBadge) srcBadge.style.display = 'none';
+        }
+
+        // Персонаж и реплика с портретом и баблом
+        const charAvatar = document.getElementById('card-char-avatar');
+        const charName = document.getElementById('card-character-name');
+        const charRole = document.getElementById('card-character-role');
+        const charMood = document.getElementById('card-character-mood');
+        const dialogueText = document.getElementById('card-dialogue-text');
+
+        const role = challenge.character_role || 'Пассажир';
+        const name = challenge.character_name || 'Пассажир';
+        const dText = challenge.dialogue_text || challenge.situation_text || '';
+        const rLower = role.toLowerCase();
+        const nLower = name.toLowerCase();
+        const dLower = dText.toLowerCase();
+        const tLower = (challenge.title || '').toLowerCase();
+        const searchContext = `${tLower} ${rLower} ${nLower} ${dLower}`;
+
+        // 1. Выбор визуального аватара (портрета) участника ситуации
+        let avatarSrc = challenge.avatar_img || '/static/simulator/img/passenger_business.svg';
+        if (!challenge.avatar_img) {
+            if (challenge.speaker_type === 'machinist' || rLower.includes('машинист') || nLower.includes('машинист')) {
+                avatarSrc = '/static/simulator/img/machinist.svg';
+            } else if (challenge.speaker_type === 'system' || rLower.includes('электрощит') || nLower.includes('электрощит')) {
+                avatarSrc = '/static/simulator/img/system_monitor.svg';
+            } else if (searchContext.includes('пьян') || searchContext.includes('нетрезв') || searchContext.includes('дебош') || searchContext.includes('буян')) {
+                avatarSrc = '/static/simulator/img/passenger_brawler.svg';
+            }
+        }
+
+        // 2. Определение эмоционального тона и статуса
+        const moodMap = {
+            'panicked': { text: 'В панике', className: 'vsm-mood-warning' },
+            'irritated': { text: 'Раздражен', className: 'vsm-mood-danger' },
+            'critical': { text: 'Требуется помощь', className: 'vsm-mood-danger' },
+            'formal': { text: 'Деловой тон', className: 'vsm-mood-default' },
+            'calm': { text: 'Спокоен', className: 'vsm-mood-default' },
+            'grateful': { text: 'Благодарен', className: 'vsm-mood-default' },
+            'neutral': { text: 'В диалоге', className: 'vsm-mood-default' }
+        };
+
+        const rawMood = (challenge.character_mood || '').toLowerCase().trim();
+        let moodText = moodMap[rawMood] ? moodMap[rawMood].text : (challenge.character_mood_default || 'В диалоге');
+        let moodClass = moodMap[rawMood] ? moodMap[rawMood].className : 'vsm-mood-default';
+
+        if (challenge.speaker_type === 'machinist' || avatarSrc.includes('machinist')) {
+            moodText = 'Радиоэфир';
+            moodClass = 'vsm-mood-default';
+        } else if (challenge.speaker_type === 'system' || avatarSrc.includes('system_monitor')) {
+            moodText = 'Телеметрия';
+            moodClass = 'vsm-mood-system';
+        }
+
+        const cleanName = name.trim().toLowerCase();
+        const cleanRole = role.trim().toLowerCase();
+        let cleanMood = moodText.trim().toLowerCase();
+
+        if (cleanMood === cleanName || cleanMood === cleanRole) {
+            const fallback = moodMap[rawMood] || { text: 'В диалоге', className: 'vsm-mood-default' };
+            moodText = fallback.text;
+            moodClass = fallback.className;
+        }
+
+        let displayRole = role;
+        if (cleanRole === cleanName) {
+            displayRole = (cleanName === 'пассажир') ? 'Пассажир поезда' : 'Участник диалога';
+        }
+
+        if (charAvatar) charAvatar.src = avatarSrc;
+        if (charName) charName.textContent = name;
+        if (charRole) charRole.textContent = displayRole;
+        if (charMood) {
+            charMood.className = `vsm-mood-badge ${moodClass}`;
+            charMood.textContent = moodText;
+        }
+        if (dialogueText) {
+            dialogueText.textContent = formatCleanDialogue(challenge.dialogue_text || challenge.situation_text);
+        }
+
+        // Очищаем историю дополнительных реплик в чате карусели, оставляя только начальную реплику
+        const chatFeed = document.getElementById('carousel-chat-feed');
+        if (chatFeed) {
+            const rows = chatFeed.querySelectorAll('.vsm-chat-row');
+            rows.forEach((row, index) => {
+                if (index > 0) row.remove();
+            });
+            chatFeed.scrollTop = 0;
+        }
+
+        // Добавляем реплику пассажира в историю диалога
+        this.historyLog = [{
+            role: 'passenger',
+            text: challenge.dialogue_text || challenge.situation_text || ''
+        }];
+
+        // Нормативный регламент
+        document.getElementById('card-regulation-ref').textContent = challenge.regulation_reference || 'Отраслевой регламент и стандарты сервиса ВСМ';
+
+        // Сброс бортовой телеметрии перед началом нового раунда
+        const telemetryBox = document.getElementById('card-telemetry-box');
+        if (telemetryBox) telemetryBox.style.display = 'none';
+
+        // Сохраняем варианты регламента в памяти для вызова подсказки
+        this.currentChoices = challenge.choices || [];
+        this.hideHintsPanel();
+
+        // ТАЙМЕР ЗАПУСКАЕТСЯ ТОЛЬКО ПОСЛЕ ОКОНЧАНИЯ РЕЧИ ПЕРСОНАЖА!
+        this.stopTimer();
+        const speech = challenge.dialogue_text || '';
+        let challengeTimerStarted = false;
+        const startTurnActions = () => {
+            if (challengeTimerStarted) return;
+            challengeTimerStarted = true;
+            this.setButtonsDisabled(false);
+            this.isProcessing = false;
+            this.setAiStatus('Примите решение: микрофон, текст или оборудование');
+            this.startTimer(challenge.timer_seconds || 20);
+        };
+
+        if (this.audio) {
+            this.audio.stopSpeech();
+            setTimeout(() => {
+                this.audio.playTrainChime();
+                if (this.audio.settings && this.audio.settings.ttsEnabled && speech) {
+                    const spType = challenge.speaker_type || (this.audio.detectSpeakerType ? 
+                        this.audio.detectSpeakerType(speech, challenge.character_name, challenge.character_role) : 'male');
+                    this.setAiStatus('Воспроизведение реплики пассажира...');
+                    this.audio.speak(
+                        speech,
+                        () => {
+                            this.stopTimer();
+                            this.setAiStatus('Пассажир обращается к вам...');
+                        },
+                        startTurnActions,
+                        spType
+                    );
+                    // Защитный таймаут на случай непредвиденных задержек аудио (от длины фразы)
+                    const maxWaitMs = Math.max(7000, speech.length * 110 + 2500);
+                    setTimeout(startTurnActions, maxWaitMs);
+                } else {
+                    setTimeout(startTurnActions, 600);
+                }
+            }, 250);
+        } else {
+            startTurnActions();
+        }
+    }
+
+    getMoodInfo(mood) {
+        const moodMap = {
+            'grateful': { text: 'Благодарен', cls: 'vsm-mood-default' },
+            'irritated': { text: 'Раздражен', cls: 'vsm-mood-danger' },
+            'panicked': { text: 'В панике', cls: 'vsm-mood-warning' },
+            'critical': { text: 'Требуется помощь', cls: 'vsm-mood-danger' },
+            'formal': { text: 'Деловой тон', cls: 'vsm-mood-default' },
+            'calm': { text: 'Спокоен', cls: 'vsm-mood-default' },
+        };
+        return moodMap[mood] || { text: 'В диалоге', cls: 'vsm-mood-default' };
+    }
+
+    getActionTitle(action) {
+        const titles = {
+            'emergency_brake': 'Срыв стоп-крана',
+            'fire_extinguisher': 'Применение огнетушителя ОВП-8',
+            'electric_panel': 'Осмотр электрощита и СКНБ',
+            'aed_medkit': 'Вскрытие аптечки и АНД',
+            'ukeb_scan': 'Проверка по терминалу УКЭБ',
+            'tea_service': 'Предложить чай / воду с лимоном',
+            'driver_intercom': 'Связь с машинистом по УПС',
+            'glass_hammer': 'Взять аварийный молоток'
+        };
+        return titles[action] || action;
+    }
+
+    appendChatTurn(role, text, action = '', systemNotice = '', mood = null, actionTitle = '') {
+        const chatFeed = document.getElementById('carousel-chat-feed');
+        if (!chatFeed || (!text && !action)) return;
+
+        const row = document.createElement('div');
+        row.className = `vsm-chat-row ${role === 'conductor' ? 'conductor' : 'passenger'}`;
+
+        if (role === 'conductor') {
+            const displayTitle = actionTitle || this.getActionTitle(action);
+            const actionBadgeHtml = displayTitle ? `<div class="vsm-action-badge"><i data-lucide="wrench" style="width: 14px; height: 14px;"></i><span>Действие: [${displayTitle}]</span></div>` : '';
+            const safeText = formatCleanDialogue(text || (displayTitle ? `Применяю [${displayTitle}] по регламенту вагона.` : ''));
+            const textHtml = safeText ? `<div class="vsm-speech-text conductor-text" style="color: #f1f5f9; font-size: 1.05rem;">${safeText}</div>` : '';
+            const conductorAvatar = window.VSM_CONDUCTOR_AVATAR || (chatFeed ? chatFeed.dataset.conductorAvatar : '') || '/static/simulator/img/avatar_1.svg';
+
+            row.innerHTML = `
+                <div class="vsm-conductor-frame-col">
+                    <div class="vsm-conductor-avatar-box">
+                        <img src="${conductorAvatar}" alt="Проводник ВСМ" class="vsm-conductor-avatar-img">
+                    </div>
+                    <div class="vsm-conductor-role-pill" title="Экипаж поезда">
+                        <span class="vsm-status-indicator-dot conductor-dot"></span>
+                        <span>Экипаж ВСМ</span>
+                    </div>
+                </div>
+                <div class="vsm-speech-bubble vsm-speech-bubble-conductor">
+                    <div class="vsm-speech-header">
+                        <div class="vsm-speech-speaker">
+                            <span class="vsm-speaker-name" style="color: #38bdf8;">Экипаж ВСМ (Вы)</span>
+                            <span class="vsm-mood-badge vsm-mood-conductor">В радиоэфире</span>
+                        </div>
+                        <div class="vsm-speech-time-badge">
+                            <i data-lucide="radio" style="width: 13px; height: 13px;"></i>
+                            <span>Доклад</span>
+                        </div>
+                    </div>
+                    ${textHtml}
+                    ${actionBadgeHtml}
+                </div>
+            `;
+        } else {
+            const challenge = this.currentChallenge || {};
+            let avatarSrc = challenge.avatar_img || '/static/simulator/img/passenger_business.svg';
+            const name = challenge.character_name || 'Пассажир';
+            const roleText = challenge.character_role || 'Пассажир поезда';
+            const mInfo = mood ? this.getMoodInfo(mood) : { text: 'В диалоге', cls: 'vsm-mood-default' };
+            const moodHtml = `<span class="vsm-mood-badge ${mInfo.cls}">${mInfo.text}</span>`;
+            const safeText = formatCleanDialogue(text || '');
+            const evBadge = systemNotice ? `
+                <div class="vsm-speech-subcontext" style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;">
+                    <div style="display: flex; align-items: center; gap: 0.45rem; flex: 1;">
+                        <i data-lucide="radio" style="width: 14px; height: 14px; color: #a855f7; flex-shrink: 0;"></i>
+                        <span>${systemNotice}</span>
+                    </div>
+                    <button type="button" class="vsm-audio-btn vsm-log-audio-btn" title="Озвучить бортовой журнал (роботизированный голос)">
+                        <i data-lucide="volume-2" style="width: 12px; height: 12px;"></i>
+                        <span>Журнал</span>
+                    </button>
+                </div>
+            ` : '';
+
+            row.innerHTML = `
+                <div class="vsm-passenger-frame-col">
+                    <div class="vsm-passenger-avatar-box">
+                        <img src="${avatarSrc}" alt="${name}" class="vsm-passenger-avatar-img">
+                    </div>
+                    <div class="vsm-passenger-role-pill" title="Роль участника инцидента">
+                        <span class="vsm-status-indicator-dot"></span>
+                        <span>${roleText}</span>
+                    </div>
+                </div>
+                <div class="vsm-speech-bubble vsm-speech-bubble-interactive">
+                    <div class="vsm-speech-header">
+                        <div class="vsm-speech-speaker">
+                            <span class="vsm-speaker-name">${name}</span>
+                            ${moodHtml}
+                        </div>
+                        <button type="button" class="vsm-audio-btn replay-turn-audio-btn" title="Прослушать ответ персонажа">
+                            <i data-lucide="volume-2" style="width: 14px; height: 14px;"></i>
+                            <span>Аудио</span>
+                        </button>
+                    </div>
+                    <div class="vsm-speech-text" style="color: #f8fafc; font-size: 1.05rem;">${safeText}</div>
+                    ${evBadge}
+                </div>
+            `;
+            const playBtn = row.querySelector('.replay-turn-audio-btn');
+            if (playBtn) {
+                playBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const audio = this.audio || window.vsmAudio;
+                    if (!audio) return;
+                    if (audio.isSpeaking) {
+                        audio.stopSpeech();
+                    } else {
+                        const rawSpeechText = safeText.replace(/^[«"'\s]+|[»"'\s]+$/g, '').trim();
+                        const spType = challenge.speaker_type || (audio.detectSpeakerType ? 
+                            audio.detectSpeakerType(rawSpeechText, name, roleText) : 'male');
+                        audio.speak(rawSpeechText, null, null, spType, true);
+                    }
+                };
+            }
+            const logBtn = row.querySelector('.vsm-log-audio-btn');
+            if (logBtn && systemNotice) {
+                logBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const audio = this.audio || window.vsmAudio;
+                    if (!audio) return;
+                    if (audio.isSpeaking) {
+                        audio.stopSpeech();
+                    } else {
+                        const rawNotice = systemNotice.replace(/^Телеметрия:\s*|^Журнал:\s*/i, '').trim();
+                        audio.speak(rawNotice, null, null, 'system', true);
+                    }
+                };
+            }
+        }
+
+        chatFeed.appendChild(row);
+        if (window.lucide) lucide.createIcons();
+        chatFeed.scrollTop = chatFeed.scrollHeight;
+    }
+
+    hideHintsPanel() {
+        const panel = document.getElementById('carousel-ai-hints-panel');
+        if (panel) panel.style.display = 'none';
+    }
+
+    requestHint() {
+        if (this.isProcessing) return;
+        if (this.currentChoices && this.currentChoices.length > 0) {
+            this.renderChoices(this.currentChoices, 'Регламентные действия ВСМ в этой ситуации');
+            const panel = document.getElementById('carousel-ai-hints-panel');
+            if (panel) {
+                panel.style.display = 'block';
+                panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            this.setAiStatus('Отображены регламентные варианты действий');
+        } else {
+            this.sendTextTurn(null, 'Подскажите, как поступить по регламенту ВСМ?');
+        }
+    }
+
+    renderChoices(choicesList, reason) {
+        const choicesGrid = document.getElementById('choices-container');
+        const hintsPanel = document.getElementById('carousel-ai-hints-panel');
+        const reasonEl = document.getElementById('carousel-ai-hint-reason');
+        if (!choicesGrid) return;
+        choicesGrid.innerHTML = '';
+        if (reason && reasonEl) reasonEl.textContent = reason;
+
+        (choicesList || []).forEach((choice, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'vsm-endless-choice-btn';
+            btn.innerHTML = `
+                <span class="vsm-choice-key-badge">${idx + 1}</span>
+                <span class="vsm-choice-text">${choice.text}</span>
+                <span class="vsm-choice-hint">${choice.hint || ''}</span>
+            `;
+            btn.onclick = () => {
+                this.hideHintsPanel();
+                if (choice.index !== undefined) {
+                    this.makeChoice(choice.index);
+                } else {
+                    this.sendDecisionTurn({ message: choice.text });
+                }
+            };
+            choicesGrid.appendChild(btn);
+        });
+
+        if (hintsPanel && choicesList && choicesList.length > 0) {
+            hintsPanel.style.display = 'block';
+        }
+
+        if (window.lucide) lucide.createIcons();
+    }
+
+    toggleSpeechCurrent() {
+        const audio = this.audio || window.vsmAudio;
+        if (audio) {
+            if (audio.isSpeaking) {
+                audio.stopSpeech();
+                return;
+            }
+            const textEl = document.getElementById('card-dialogue-text');
+            if (textEl && textEl.textContent && textEl.textContent.trim() !== '«...»') {
+                const spType = this.currentChallenge?.speaker_type || (audio.detectSpeakerType ? 
+                    audio.detectSpeakerType(textEl.textContent, this.currentChallenge?.character_name, this.currentChallenge?.character_role) : 'male');
+                audio.speak(textEl.textContent, null, null, spType, true);
+            }
+        }
+    }
+
+    toggleTelemetrySpeech() {
+        const audio = this.audio || window.vsmAudio;
+        if (!audio) return;
+        if (audio.isSpeaking) {
+            audio.stopSpeech();
+            return;
+        }
+        const textEl = document.getElementById('card-telemetry-text');
+        const raw = textEl ? textEl.textContent.replace(/^Телеметрия:\s*|^Журнал:\s*/i, '').trim() : '';
+        if (raw) {
+            audio.speak(raw, null, null, 'system', true);
+        }
+    }
+
+    stopTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+    }
+
+    handleTimeout() {
+        if (this.isProcessing) return;
+        this.stopTimer();
+        this.cancelVoiceRecording(false);
+        this.sendDecisionTurn({ is_timeout: true });
+    }
+
+    startTimer(seconds) {
+        this.stopTimer();
+        this.totalSeconds = seconds;
+        this.remainingSeconds = seconds;
+
+        const timerText = document.getElementById('timer-seconds-text');
+        const bar = document.getElementById('countdown-progress');
+        if (timerText) timerText.textContent = this.remainingSeconds;
+        if (bar) {
+            bar.style.width = '100%';
+            bar.classList.remove('urgent');
+        }
+
+        this.timerInterval = setInterval(() => {
+            this.remainingSeconds--;
+            if (timerText) timerText.textContent = this.remainingSeconds;
+            
+            const pct = (this.remainingSeconds / this.totalSeconds) * 100;
+            if (bar) bar.style.width = `${Math.max(0, pct)}%`;
+
+            if (this.remainingSeconds <= 5) {
+                if (bar) bar.classList.add('urgent');
+                if (this.audio) this.audio.playWarning();
+            }
+
+            if (this.remainingSeconds <= 0) {
+                clearInterval(this.timerInterval);
+                this.handleTimeout();
+            }
+        }, 1000);
+    }
+
+    setButtonsDisabled(disabled) {
+        document.querySelectorAll('.vsm-endless-choice-btn').forEach(b => b.disabled = disabled);
+        const micBtn = document.getElementById('carousel-mic-btn');
+        if (micBtn) micBtn.disabled = disabled;
+        const txtInput = document.getElementById('carousel-text-input');
+        if (txtInput) txtInput.disabled = disabled;
+        const txtBtn = document.querySelector('#carousel-text-form button');
+        if (txtBtn) txtBtn.disabled = disabled;
+    }
+
+    // --- ГОЛОСОВАЯ РАДИОСВЯЗЬ PTT И РАСПОЗНАВАНИЕ ASR ---
+    initSpeechRecognition() {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        this.hasWebSpeech = Boolean(SpeechRec);
+    }
+
+    startWebSpeech() {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) return;
+        try {
+            if (this.speechRecognition) {
+                try { this.speechRecognition.abort(); } catch(_) {}
+                this.speechRecognition = null;
+            }
+            this.speechRecognition = new SpeechRec();
+            this.speechRecognition.lang = 'ru-RU';
+            this.speechRecognition.interimResults = true;
+            this.speechRecognition.continuous = true;
+
+            this.speechRecognition.onresult = (event) => {
+                let interim = '';
+                let final = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        final += event.results[i][0].transcript + ' ';
+                    } else {
+                        interim += event.results[i][0].transcript;
+                    }
+                }
+                const recognized = (final + interim).trim();
+                if (recognized) {
+                    this.recordedTranscript = recognized;
+                    const micTextEl = document.getElementById('carousel-mic-text');
+                    if (micTextEl) {
+                        if ('value' in micTextEl) {
+                            micTextEl.value = this.recordedTranscript;
+                        } else {
+                            micTextEl.textContent = `«${this.recordedTranscript}»`;
+                        }
+                    }
+                    const textInput = document.getElementById('carousel-text-input');
+                    if (textInput) {
+                        textInput.value = this.recordedTranscript;
+                    }
+                    const preview = document.getElementById('carousel-mic-preview');
+                    if (preview) preview.style.display = 'flex';
+                }
+            };
+
+            this.speechRecognition.onerror = (e) => {
+                console.warn('Speech recognition warning:', e.error);
+            };
+
+            this.speechRecognition.onend = () => {
+                if (this.isRecording) {
+                    try { this.speechRecognition.start(); } catch (_) {}
+                }
+            };
+
+            this.speechRecognition.start();
+        } catch (err) {
+            console.warn('Speech recognition start error:', err);
+        }
+    }
+
+    async toggleVoiceRecording() {
+        if (this.isProcessing) return;
+
+        if (!this.isRecording) {
+            // Старт записи
+            this.stopTimer(); // Пауза таймера во время доклада проводника
+            this.recordedTranscript = '';
+            if (this.audio) this.audio.stopSpeech();
+
+            this.isRecording = true;
+            this.audioChunks = [];
+
+            const micBtn = document.getElementById('carousel-mic-btn');
+            if (micBtn) micBtn.classList.add('recording');
+            const micStatus = document.getElementById('carousel-mic-status');
+            if (micStatus) micStatus.textContent = 'Идет запись... Говорите в микрофон';
+            const micText = document.getElementById('carousel-mic-text');
+            if (micText) {
+                if ('value' in micText) micText.value = '';
+                else micText.textContent = 'Слушаю вас...';
+            }
+            const micPreview = document.getElementById('carousel-mic-preview');
+            if (micPreview) micPreview.style.display = 'flex';
+            const micSendBar = document.getElementById('carousel-mic-send-bar');
+            if (micSendBar) micSendBar.style.display = 'none';
+
+            // 1. Быстрый браузерный Web Speech API (не блокирует звуковой тракт)
+            this.startWebSpeech();
+
+            // 2. Аудиопоток для спектрального визуализатора и бортового STT ASR
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                try {
+                    this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.startMicVisualizer(this.micStream);
+
+                    const options = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                        ? { mimeType: 'audio/webm;codecs=opus' }
+                        : (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus') ? { mimeType: 'audio/ogg;codecs=opus' } : {});
+                    this.mediaRecorder = new MediaRecorder(this.micStream, options);
+                    this.mediaRecorder.ondataavailable = (e) => {
+                        if (e.data && e.data.size > 0) this.audioChunks.push(e.data);
+                    };
+                    this.mediaRecorder.start(250);
+                } catch (recErr) {
+                    console.warn('Media visualizer/recorder init warning:', recErr);
+                }
+            }
+        } else {
+            // Остановка записи
+            this.isRecording = false;
+            this.stopMicVisualizer();
+
+            const micBtn = document.getElementById('carousel-mic-btn');
+            if (micBtn) micBtn.classList.remove('recording');
+            const micStatus = document.getElementById('carousel-mic-status');
+            if (micStatus) micStatus.textContent = 'Распознавание речи...';
+
+            if (this.speechRecognition) {
+                try { this.speechRecognition.stop(); } catch (_) {}
+            }
+
+            if (this.micStream) {
+                this.micStream.getTracks().forEach(t => t.stop());
+                this.micStream = null;
+            }
+
+            if (this.recordedTranscript && this.recordedTranscript.length > 1) {
+                // Если речь уже успешно распознана Web Speech API
+                this.showRecognizedSpeechForEditing(this.recordedTranscript);
+            } else if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                // Иначе отправляем аудио на бортовой REST ASR
+                this.mediaRecorder.stop();
+                this.mediaRecorder.onstop = async () => {
+                    if (this.recordedTranscript && this.recordedTranscript.length > 1) {
+                        this.showRecognizedSpeechForEditing(this.recordedTranscript);
+                        return;
+                    }
+                    const mimeType = this.mediaRecorder.mimeType || 'audio/webm;codecs=opus';
+                    const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+                    try {
+                        const res = await fetch('/api/v1/live/asr/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': mimeType },
+                            body: audioBlob
+                        });
+                        const data = await res.json();
+                        if (data && data.ok && data.text) {
+                            this.showRecognizedSpeechForEditing(data.text);
+                        } else {
+                            const errMsg = (data && data.error) ? data.error : 'Речь не распознана. Повторите или отправьте текст.';
+                            if (micStatus) micStatus.textContent = errMsg;
+                            if (data && (data.need_salutespeech_key || data.need_auth_key)) {
+                                window.vsmAlert(
+                                    errMsg + '\n\nВы можете прямо сейчас ввести реплику текстом в поле ввода или нажать один из предложенных вариантов.',
+                                    'Голосовая радиосвязь ВСМ'
+                                );
+                            }
+                            const textInput = document.getElementById('carousel-text-input');
+                            if (textInput) textInput.focus();
+                            this.startTimer(this.remainingSeconds || 18);
+                        }
+                    } catch (e) {
+                        if (micStatus) micStatus.textContent = 'Ошибка распознавания. Введите текст.';
+                        this.startTimer(this.remainingSeconds || 18);
+                    }
+                };
+            } else {
+                if (micStatus) micStatus.textContent = 'Речь не услышана. Нажмите на микрофон еще раз или введите текст.';
+                this.startTimer(this.remainingSeconds || 18);
+            }
+        }
+    }
+
+    onTextInputChange() {
+        const input = document.getElementById('carousel-text-input');
+        const sendBtn = document.getElementById('carousel-text-send-btn');
+        if (!input || !sendBtn) return;
+        if (input.value && input.value.trim().length > 0) {
+            sendBtn.style.display = 'inline-flex';
+        } else {
+            sendBtn.style.display = 'none';
+        }
+    }
+
+    showRecognizedSpeechForEditing(text) {
+        this.recordedTranscript = text;
+        const textInput = document.getElementById('carousel-text-input');
+        if (textInput) {
+            textInput.value = text;
+            this.onTextInputChange();
+        }
+        const micStatus = document.getElementById('carousel-mic-status');
+        if (micStatus) micStatus.textContent = 'Речь распознана. Отредактируйте или нажмите «Сказать»';
+
+        setTimeout(() => {
+            if (textInput) {
+                textInput.focus();
+                if (typeof textInput.setSelectionRange === 'function') {
+                    const len = textInput.value.length;
+                    textInput.setSelectionRange(len, len);
+                }
+            }
+        }, 50);
+
+        this.stopTimer();
+    }
+
+    startMicVisualizer(stream) {
+        const canvas = document.getElementById('carousel-mic-canvas');
+        if (!canvas) return;
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            this.visCtx = new AudioCtx();
+            const source = this.visCtx.createMediaStreamSource(stream);
+            this.analyser = this.visCtx.createAnalyser();
+            this.analyser.fftSize = 64;
+            source.connect(this.analyser);
+
+            const bufferLength = this.analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            const ctx2d = canvas.getContext('2d');
+            canvas.style.display = 'block';
+
+            const draw = () => {
+                if (!this.isRecording) return;
+                this.visAnimId = requestAnimationFrame(draw);
+                this.analyser.getByteFrequencyData(dataArray);
+
+                ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+                const barWidth = (canvas.width / bufferLength) * 1.5;
+                let x = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = (dataArray[i] / 255) * canvas.height * 0.9;
+                    const gradient = ctx2d.createLinearGradient(0, canvas.height, 0, 0);
+                    gradient.addColorStop(0, '#00d2ff');
+                    gradient.addColorStop(1, '#10b981');
+                    ctx2d.fillStyle = gradient;
+                    ctx2d.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+                    x += barWidth;
+                }
+            };
+            draw();
+        } catch (e) {
+            console.warn('Mic visualizer error:', e);
+        }
+    }
+
+    stopMicVisualizer() {
+        if (this.visAnimId) {
+            cancelAnimationFrame(this.visAnimId);
+            this.visAnimId = null;
+        }
+        if (this.visCtx) {
+            try { this.visCtx.close(); } catch (_) {}
+            this.visCtx = null;
+        }
+        const canvas = document.getElementById('carousel-mic-canvas');
+        if (canvas) {
+            const ctx2d = canvas.getContext('2d');
+            ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+            canvas.style.display = 'none';
+        }
+    }
+
+    sendRecordedVoice() {
+        const micTextEl = document.getElementById('carousel-mic-text');
+        const textInputEl = document.getElementById('carousel-text-input');
+        let text = '';
+        if (micTextEl && 'value' in micTextEl) {
+            text = micTextEl.value.trim();
+        } else if (micTextEl) {
+            text = (micTextEl.textContent || '').replace(/[«»]/g, '').trim();
+        }
+        if (!text && textInputEl) {
+            text = textInputEl.value.trim();
+        }
+        if (!text) {
+            text = (this.recordedTranscript || '').trim();
+        }
+
+        if (text && text !== 'Слушаю вас...') {
+            this.cancelVoiceRecording(false);
+            if (textInputEl) {
+                textInputEl.value = '';
+                this.onTextInputChange();
+            }
+            this.sendDecisionTurn({ message: text, action: '' });
+        } else {
+            window.vsmAlert('Сначала произнесите или введите слова проводника.');
+        }
+    }
+
+    cancelVoiceRecording(resumeTimer = true) {
+        this.isRecording = false;
+        this.stopMicVisualizer();
+        if (this.micStream) {
+            this.micStream.getTracks().forEach(t => t.stop());
+            this.micStream = null;
+        }
+        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+            try { this.mediaRecorder.stop(); } catch (_) {}
+        }
+        if (this.speechRecognition) {
+            try { this.speechRecognition.stop(); } catch (_) {}
+        }
+
+        const micBtn = document.getElementById('carousel-mic-btn');
+        if (micBtn) micBtn.classList.remove('recording');
+        const micStatus = document.getElementById('carousel-mic-status');
+        if (micStatus) micStatus.textContent = 'Нажмите и говорите';
+
+        if (resumeTimer && !this.isProcessing) {
+            this.startTimer(this.remainingSeconds || 20);
+        }
+    }
+
+    sendTextTurn(e, forcedText) {
+        if (e) e.preventDefault();
+        const input = document.getElementById('carousel-text-input');
+        const text = forcedText || (input ? input.value.trim() : '');
+        if (!text) {
+            window.vsmAlert('Введите реплику проводника или команду поездной бригаде.');
+            return;
+        }
+        if (input) {
+            input.value = '';
+            this.onTextInputChange();
+        }
+        const micStatus = document.getElementById('carousel-mic-status');
+        if (micStatus) micStatus.textContent = 'Нажмите и говорите';
+        this.sendDecisionTurn({ message: text, action: '' });
+    }
+
+    initClock() {
+        const update = () => {
+            const clockEl = document.getElementById('carousel-car-clock');
+            if (clockEl) {
+                const now = new Date();
+                const hh = String(now.getHours()).padStart(2, '0');
+                const mm = String(now.getMinutes()).padStart(2, '0');
+                clockEl.textContent = `${hh}:${mm}`;
+            }
+        };
+        update();
+        setInterval(update, 1000);
+    }
+
+    updateDynamicTemperature(challengeOrOverride = null) {
+        const tempEl = document.getElementById('carousel-car-temp');
+        if (!tempEl) return;
+
+        if (typeof challengeOrOverride === 'string') {
+            tempEl.textContent = `САЛОН: ${challengeOrOverride}`;
+            tempEl.className = 'vsm-temp-normal';
+            return;
+        }
+
+        const challenge = challengeOrOverride || this.currentChallenge;
+        const text = [
+            challenge?.title || '',
+            challenge?.situation_text || '',
+            challenge?.passenger_speech || '',
+            challenge?.category || ''
+        ].join(' ').toLowerCase();
+
+        tempEl.classList.remove('vsm-temp-fire', 'vsm-temp-overheat', 'vsm-temp-warning', 'vsm-temp-cold', 'vsm-temp-normal');
+
+        if (text.includes('пожар') || text.includes('задымлен') || text.includes('огн') || text.includes('горит') || text.includes('пламя')) {
+            tempEl.textContent = 'САЛОН: +41°C';
+            tempEl.classList.add('vsm-temp-fire');
+        } else if (text.includes('жар') || text.includes('душн') || text.includes('кондиционер') || text.includes('климат') || text.includes('перегрев') || text.includes('+33') || text.includes('+30')) {
+            tempEl.textContent = 'САЛОН: +31°C';
+            tempEl.classList.add('vsm-temp-overheat');
+        } else if (text.includes('скнб') || text.includes('букс') || text.includes('нагрев букс')) {
+            tempEl.textContent = 'САЛОН: +27°C';
+            tempEl.classList.add('vsm-temp-warning');
+        } else if (text.includes('холод') || text.includes('мороз') || text.includes('замерз') || text.includes('сквозняк') || text.includes('дует') || text.includes('открыт')) {
+            tempEl.textContent = 'САЛОН: +16°C';
+            tempEl.classList.add('vsm-temp-cold');
+        } else {
+            tempEl.textContent = 'САЛОН: +22°C';
+            tempEl.classList.add('vsm-temp-normal');
+        }
+    }
+
+    initTouchDragAndDrop() {
+        const items = document.querySelectorAll('.vsm-tactile-item');
+        const dropTarget = document.getElementById('carousel-car-drop-target') || document.querySelector('.vsm-car-drop-target');
+        if (!items.length || !dropTarget) return;
+
+        items.forEach(item => {
+            let startX = 0, startY = 0;
+            let isDragging = false;
+            let avatar = null;
+            const actionCode = item.getAttribute('data-code') || '';
+            const actionTitle = item.getAttribute('data-title') || item.getAttribute('title') || 'Оборудование вагона';
+
+            item.addEventListener('touchstart', (e) => {
+                if (e.touches.length !== 1) return;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                isDragging = false;
+            }, { passive: true });
+
+            item.addEventListener('touchmove', (e) => {
+                if (e.touches.length !== 1) return;
+                const touch = e.touches[0];
+                const dx = touch.clientX - startX;
+                const dy = touch.clientY - startY;
+
+                if (!isDragging && Math.hypot(dx, dy) > 10) {
+                    isDragging = true;
+                    dropTarget.classList.add('highlight-target');
+
+                    avatar = document.createElement('div');
+                    avatar.className = 'vsm-touch-drag-avatar';
+                    avatar.innerHTML = item.innerHTML;
+                    document.body.appendChild(avatar);
+                }
+
+                if (isDragging && avatar) {
+                    if (e.cancelable) e.preventDefault();
+                    avatar.style.left = touch.clientX + 'px';
+                    avatar.style.top = touch.clientY + 'px';
+
+                    const rect = dropTarget.getBoundingClientRect();
+                    const isOver = (
+                        touch.clientX >= rect.left &&
+                        touch.clientX <= rect.right &&
+                        touch.clientY >= rect.top &&
+                        touch.clientY <= rect.bottom
+                    );
+
+                    if (isOver) {
+                        dropTarget.classList.add('drag-active');
+                    } else {
+                        dropTarget.classList.remove('drag-active');
+                    }
+                }
+            }, { passive: false });
+
+            const cleanUp = () => {
+                if (avatar && avatar.parentNode) {
+                    avatar.parentNode.removeChild(avatar);
+                }
+                avatar = null;
+                dropTarget.classList.remove('highlight-target', 'drag-active');
+                isDragging = false;
+            };
+
+            item.addEventListener('touchend', (e) => {
+                if (isDragging) {
+                    const touch = e.changedTouches[0];
+                    const rect = dropTarget.getBoundingClientRect();
+                    const isOver = (
+                        touch.clientX >= rect.left &&
+                        touch.clientX <= rect.right &&
+                        touch.clientY >= rect.top &&
+                        touch.clientY <= rect.bottom
+                    );
+
+                    cleanUp();
+
+                    if (isOver && actionCode) {
+                        this.useEquipment(actionCode, actionTitle);
+                    }
+                } else {
+                    cleanUp();
+                }
+            });
+
+            item.addEventListener('touchcancel', cleanUp);
+        });
+    }
+
+    // --- ТАКТИЛЬНОЕ ОБОРУДОВАНИЕ И DRAG-AND-DROP ---
+    handleDragStart(e, code, title) {
+        e.dataTransfer.setData('text/plain', JSON.stringify({ code, title }));
+        e.dataTransfer.effectAllowed = 'copyMove';
+        const dt = document.getElementById('carousel-car-drop-target');
+        if (dt) dt.classList.add('highlight-target');
+    }
+
+    handleDragEnd(e) {
+        const dt = document.getElementById('carousel-car-drop-target');
+        if (dt) dt.classList.remove('highlight-target', 'drag-active');
+    }
+
+    handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        const dt = document.getElementById('carousel-car-drop-target');
+        if (dt) dt.classList.add('drag-active');
+    }
+
+    handleDragLeave(e) {
+        const dt = document.getElementById('carousel-car-drop-target');
+        if (dt) dt.classList.remove('drag-active');
+    }
+
+    handleDrop(e) {
+        e.preventDefault();
+        const dt = document.getElementById('carousel-car-drop-target');
+        if (dt) dt.classList.remove('drag-active', 'highlight-target');
+
+        try {
+            const raw = e.dataTransfer.getData('text/plain');
+            if (raw) {
+                const data = JSON.parse(raw);
+                if (data && data.code) {
+                    this.useEquipment(data.code, data.title || 'Оборудование вагона');
+                }
+            }
+        } catch (err) {
+            console.warn('Drop error:', err);
+        }
+    }
+
+    useEquipment(actionCode, actionTitle) {
+        if (this.isProcessing) return;
+
+        if (this.audio) {
+            if (actionCode === 'emergency_brake') this.audio.playEmergency();
+            else if (actionCode === 'driver_intercom') this.audio.playMachinistRadioChirp();
+            else if (actionCode === 'electric_panel') this.audio.playSystemTelemetryBeep();
+            else this.audio.playClick();
+        }
+
+        // Динамическая реакция температуры на климат и огнетушитель
+        if (actionCode === 'electric_panel' || actionCode === 'fire_extinguisher') {
+            this.updateDynamicTemperature('+22°C');
+        }
+
+        const dropText = document.getElementById('carousel-drop-target-text');
+        if (dropText) {
+            dropText.textContent = `Применено: [${actionTitle}]. ИИ оценивает ситуацию...`;
+        }
+
+        const textInput = document.getElementById('carousel-text-input');
+        const typedText = textInput ? textInput.value.trim() : '';
+        const message = typedText || `Применяю [${actionTitle}] по регламенту вагона.`;
+        if (textInput) {
+            textInput.value = '';
+            this.onTextInputChange();
+        }
+
+        this.sendDecisionTurn({ action: actionCode, message: message, action_title: actionTitle });
+    }
+
+    // --- БЫСТРЫЙ ВЫБОР РЕШЕНИЯ ИЗ СПИСКА ---
+    makeChoice(choiceIndex) {
+        this.sendDecisionTurn({ choice_index: choiceIndex });
+    }
+
+    // --- ЕДИНЫЙ ДИСПЕТЧЕР ХОДА В КАРУСЕЛИ (КНОПКА / ГОЛОС ASR / ТЕКСТ / ОБОРУДОВАНИЕ) ---
+    async sendDecisionTurn({ choice_index = null, message = '', action = '', action_title = '', is_timeout = false }) {
+        if (this.isProcessing) return;
+        this.isProcessing = true;
+        this.stopTimer();
+
+        // Watchdog таймер: при залипании сети автоматически возвращает интерфейс в строй
+        clearTimeout(this._processingWatchdog);
+        this._processingWatchdog = setTimeout(() => {
+            if (this.isProcessing) {
+                console.warn('VSM Watchdog: автосброс блокировки интерфейса карусели');
+                this.isProcessing = false;
+                this.setButtonsDisabled(false);
+            }
+        }, 5000);
+
+        if (this.audio) {
+            this.audio.stopSpeech();
+            if (!action && !message) {
+                this.audio.playClick();
+            }
+        }
+
+        this.setButtonsDisabled(true);
+        this.setAiStatus('Нейросетевой ассистент анализирует действия экипажа...');
+
+        const payload = {
+            challenge_id: this.currentChallenge.id,
+            is_timeout: is_timeout
+        };
+        if (choice_index !== null && choice_index !== undefined) {
+            payload.choice_index = choice_index;
+        }
+        if (message) {
+            payload.message = message;
+        }
+        if (action) {
+            payload.action = action;
+        }
+        if (action_title) {
+            payload.action_title = action_title;
+        }
+        if (this.historyLog && this.historyLog.length > 0) {
+            payload.history = this.historyLog.slice(-6);
+        }
+
+        // Локальное добавление в историю диалога
+        if (message || action) {
+            const displayTitle = action_title || this.getActionTitle(action);
+            this.historyLog.push({
+                role: 'conductor',
+                text: message || (displayTitle ? `Применяю [${displayTitle}] по регламенту вагона.` : `Действие проводника: [${action}]`)
+            });
+            this.appendChatTurn('conductor', message, action, '', null, displayTitle);
+        }
+
+        try {
+            const res = await fetch(`/api/endless/${this.sessionId}/choose/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCsrfToken()
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            clearTimeout(this._processingWatchdog);
+            this.handleDecisionResponse(data);
+        } catch (err) {
+            clearTimeout(this._processingWatchdog);
+            this.isProcessing = false;
+            this.setButtonsDisabled(false);
+            console.error('Ошибка отправки ответа:', err);
+            this.setAiStatus('Сетевая ошибка. Повторите попытку.');
+        }
+    }
+
+    handleDecisionResponse(data) {
+        // Звуковой отклик
+        if (this.audio) {
+            if (data.audio === 'success') this.audio.playSuccess();
+            else if (data.audio === 'emergency') this.audio.playEmergency();
+            else this.audio.playWarning();
+        }
+
+        // Обновление шкал и всплывающих дельт
+        const statsObj = data.stats || data.summary || data;
+        if (statsObj) this.updateHud(statsObj);
+        if (data.deltas) this.showDeltas(data.deltas);
+
+
+        // Отображение реплики пассажира/персонала в диалоговом окне
+        if (data.character_reply) {
+            const chatFeed = document.getElementById('carousel-chat-feed');
+            if (!chatFeed) {
+                const dialogueTextEl = document.getElementById('card-dialogue-text');
+                if (dialogueTextEl) {
+                    dialogueTextEl.textContent = formatCleanDialogue(data.character_reply);
+                }
+            }
+            if (data.character_mood) {
+                const moodEl = document.getElementById('card-character-mood');
+                if (moodEl) {
+                    const m = this.getMoodInfo(data.character_mood);
+                    moodEl.textContent = m.text;
+                    moodEl.className = `vsm-mood-badge ${m.cls}`;
+                }
+            }
+            this.historyLog.push({
+                role: 'passenger',
+                text: data.character_reply
+            });
+            this.appendChatTurn('passenger', data.character_reply, '', data.system_notice, data.character_mood);
+        }
+
+        // Бортовая телеметрия / системные события поезда
+        const telemetryBox = document.getElementById('card-telemetry-box');
+        const telemetryText = document.getElementById('card-telemetry-text');
+        if (data.system_notice) {
+            if (telemetryBox) telemetryBox.style.display = 'flex';
+            if (telemetryText) telemetryText.textContent = `Телеметрия: ${data.system_notice}`;
+            if (window.lucide) lucide.createIcons();
+        } else {
+            if (telemetryBox) telemetryBox.style.display = 'none';
+        }
+
+        // Проверка завершения смены (успешное завершение полного маршрута 8 станций или аварийный сход)
+        if (data.is_terminal) {
+            this.isProcessing = false;
+            clearTimeout(this._processingWatchdog);
+            if (data.is_shift_completed) {
+                const showCompletion = () => {
+                    showSuccessDebrief(data.summary || data.stats);
+                };
+                if (!data.is_correct) {
+                    openMistakeModal(data, showCompletion);
+                } else {
+                    showCompletion();
+                }
+                return;
+            } else {
+                if (!data.is_correct) {
+                    openMistakeModal(data, () => {
+                        showFailureDebrief(data.reason || 'Смена прервана из-за критического инцидента', data.stats, data);
+                    });
+                } else {
+                    showFailureDebrief(data.reason || 'Смена прервана из-за критического инцидента', data.stats, data);
+                }
+                return;
+            }
+        }
+
+        // --- МУЛЬТИ-ШАГОВЫЙ ИИ-ДИАЛОГ: СИТУАЦИЯ В ПРОЦЕССЕ РЕШЕНИЯ ---
+        if (data.status === 'in_progress' || data.is_resolved === false) {
+            this.isProcessing = false;
+            clearTimeout(this._processingWatchdog);
+            this.setButtonsDisabled(false);
+
+            // Обновляем варианты решений, предложенные ИИ (если ИИ посчитал нужным помочь или вернуть подсказку)
+            if (data.suggested_actions && data.suggested_actions.length > 0) {
+                this.renderChoices(data.suggested_actions, data.hint_reason || 'Рекомендации эксперта ВСМ');
+            } else if (data.show_hints && this.currentChoices && this.currentChoices.length > 0) {
+                this.renderChoices(this.currentChoices, data.hint_reason || 'Регламентные действия ВСМ');
+            }
+
+            // Очищаем текстовое поле и синхронизируем кнопку отправки
+            const textInput = document.getElementById('carousel-text-input');
+            if (textInput) {
+                textInput.value = '';
+                this.onTextInputChange();
+                textInput.focus();
+            }
+
+            // Озвучиваем ответ персонажа и перезапускаем таймер на следующий ход диалога
+            const spType = data.speaker_type || this.currentChallenge?.speaker_type || (this.audio?.detectSpeakerType ? 
+                this.audio.detectSpeakerType(data.character_reply, this.currentChallenge?.character_name, this.currentChallenge?.character_role) : 'male');
+            
+            if (data.character_reply && this.audio && this.audio.settings && this.audio.settings.ttsEnabled) {
+                this.setAiStatus('Персонаж отвечает в эфире...');
+                this.audio.speak(
+                    data.character_reply,
+                    () => {},
+                    () => {
+                        this.setAiStatus('Продолжайте диалог: микрофон, текст или варианты');
+                        this.startTimer(18);
+                    },
+                    spType
+                );
+            } else {
+                this.setAiStatus('Продолжайте диалог: микрофон, текст или варианты');
+                this.startTimer(18);
+            }
+            return;
+        }
+
+        const proceedToNext = () => {
+            if (this.audio) this.audio.stopSpeech();
+            const card = document.getElementById('challenge-card');
+            if (card) card.classList.add('anim-exit');
+
+            setTimeout(() => {
+                this.isProcessing = false;
+                clearTimeout(this._processingWatchdog);
+                this.setButtonsDisabled(false);
+                if (data.next_challenge) {
+                    const solvedCount = (data.stats ? ((data.stats.challenges_solved || 0) + (data.stats.mistakes_count || 0)) : 0) + 1;
+                    const stNum = Math.min(8, Math.max(1, solvedCount));
+                    const solvedEl = document.getElementById('card-solved-count');
+                    if (solvedEl) solvedEl.textContent = stNum;
+                    const ledStEl = document.getElementById('led-station-count');
+                    if (ledStEl) ledStEl.textContent = stNum;
+                    this.renderChallenge(data.next_challenge);
+                }
+            }, 350);
+        };
+
+        // Если ответ неверный или таймаут - показываем подробный разбор ошибки с регламентом
+        if (!data.is_correct) {
+            openMistakeModal(data, proceedToNext);
+        } else {
+            // Если ответ верный, и есть реплика пассажира — озвучиваем её перед переходом к следующей станции
+            if (data.character_reply && this.audio && this.audio.settings && this.audio.settings.ttsEnabled) {
+                const spType = data.speaker_type || this.currentChallenge?.speaker_type || (this.audio.detectSpeakerType ? 
+                    this.audio.detectSpeakerType(data.character_reply, this.currentChallenge?.character_name, this.currentChallenge?.character_role) : 'male');
+                this.setAiStatus('Ответ пассажира / поездной бригады...');
+                let hasProceeded = false;
+                const finishTurn = () => {
+                    if (!hasProceeded) {
+                        hasProceeded = true;
+                        setTimeout(proceedToNext, 400);
+                    }
+                };
+                this.audio.speak(
+                    data.character_reply,
+                    () => {},
+                    finishTurn,
+                    spType
+                );
+                // Защитный таймаут на случай непредвиденных задержек аудио (от длины фразы)
+                const replyLen = (data.character_reply || '').length;
+                const safeAudioTimeout = Math.max(7000, replyLen * 110 + 2500);
+                setTimeout(finishTurn, safeAudioTimeout);
+            } else {
+                setTimeout(proceedToNext, 600);
+            }
+        }
+    }
+
+    async finishShift() {
+        if (this.audio) {
+            this.audio.stopSpeech();
+            if (this.audio.stopTrainAmbient) this.audio.stopTrainAmbient();
+        }
+        const confirmed = await window.vsmConfirm({
+            title: 'Завершение смены',
+            message: 'Вы уверены, что хотите завершить рейс и сдать вагон? Текущий прогресс и заработанный опыт будут сохранены.',
+            confirmText: 'Завершить смену',
+            cancelText: 'Продолжить поездку',
+            isDanger: false
+        });
+        if (!confirmed) {
+            return;
+        }
+
+        clearInterval(this.timerInterval);
+        this.isProcessing = true;
+
+        fetch(`/api/endless/${this.sessionId}/finish/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': this.getCsrfToken()
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            this.isProcessing = false;
+            if (data.success) {
+                showSuccessDebrief(data.summary);
+                if (this.audio) this.audio.playSuccess();
+            }
+        })
+        .catch(err => {
+            this.isProcessing = false;
+            console.error(err);
+        });
+    }
+
+    getCsrfToken() {
+        const cookies = document.cookie.split(';');
+        for (let c of cookies) {
+            const [key, val] = c.trim().split('=');
+            if (key === 'csrftoken') return val;
+        }
+        return '';
+    }
+}
+
+// Глобальные модальные функции
+function openBriefingModal() {
+    const modal = document.getElementById('briefing-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeBriefingModal() {
+    const modal = document.getElementById('briefing-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function closeDebriefModal(redirect = false) {
+    const modal = document.getElementById('debrief-modal');
+    if (modal) modal.style.display = 'none';
+    const remContainer = document.getElementById('debrief-remarks-container');
+    if (remContainer) remContainer.style.display = 'none';
+    if (window.carouselEngine) {
+        window.carouselEngine.isProcessing = false;
+        window.carouselEngine.setButtonsDisabled(false);
+    }
+    if (redirect) {
+        window.location.href = "{% url 'simulator:dashboard' %}";
+    }
+}
+
+function startNewShift(challengeId = null) {
+    if (window.carouselEngine) {
+        window.carouselEngine.startNewShift(challengeId);
+    }
+}
+
+function selectShiftClass(cls) {
+    if (window.vsmAudio) window.vsmAudio.playClick();
+    const hidden = document.getElementById('chosen-shift-service-class');
+    if (hidden) hidden.value = cls;
+    document.querySelectorAll('.vsm-shift-class-btn').forEach(btn => {
+        if (btn.getAttribute('data-class') === cls) {
+            btn.classList.add('active');
+            btn.style.boxShadow = '0 0 15px rgba(0, 210, 255, 0.4)';
+            btn.style.borderColor = 'var(--vsm-cyan)';
+        } else {
+            btn.classList.remove('active');
+            btn.style.boxShadow = 'none';
+            btn.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+        }
+    });
+}
+
+function finishCurrentShift() {
+    window.carouselEngine.finishShift();
+}
+
+function openMistakeModal(data, onContinue) {
+    if (window.carouselEngine) {
+        window.carouselEngine.stopTimer();
+        window.carouselEngine.cancelVoiceRecording(false);
+        if (window.carouselEngine.audio) window.carouselEngine.audio.stopSpeech();
+    }
+
+    const modal = document.getElementById('mistake-modal');
+    if (!modal) {
+        if (onContinue) onContinue();
+        return;
+    }
+
+    const badgeText = document.getElementById('mistake-badge-text');
+    const challengeTitle = document.getElementById('mistake-challenge-title');
+    const userChoice = document.getElementById('mistake-user-choice');
+    const whyWrong = document.getElementById('mistake-why-wrong');
+    const regulation = document.getElementById('mistake-regulation');
+    const correctAction = document.getElementById('mistake-correct-action');
+    const correctHint = document.getElementById('mistake-correct-hint');
+    const continueBtn = document.getElementById('mistake-continue-btn');
+
+    const currChallenge = (window.carouselEngine && window.carouselEngine.currentChallenge) ? window.carouselEngine.currentChallenge : null;
+
+    if (badgeText) badgeText.textContent = data.is_timeout ? 'Время истекло' : 'Нарушение регламента ВСМ';
+    if (challengeTitle) challengeTitle.textContent = data.challenge_title || (currChallenge ? currChallenge.title : 'Анализ ошибки проводника');
+    if (userChoice) userChoice.textContent = data.selected_choice_text ? formatCleanDialogue(data.selected_choice_text) : 'Действие не выбрано вовремя';
+    if (whyWrong) whyWrong.textContent = data.why_wrong || data.feedback || data.explanation || 'Данное действие нарушает регламент скоростного движения ВСМ.';
+    if (regulation) regulation.textContent = data.regulation || (currChallenge ? currChallenge.regulation_reference : null) || 'ПТЭ железных дорог РФ и Стандарты обслуживания «Белый кречет»';
+    if (correctAction) correctAction.textContent = data.correct_choice_text ? formatCleanDialogue(data.correct_choice_text) : 'Соблюдение регламента ВСМ';
+    if (correctHint) correctHint.textContent = data.correct_hint || (currChallenge ? currChallenge.best_choice_explanation : null) || 'Действуйте в строгом соответствии с инструкцией проводника.';
+
+    continueBtn.onclick = () => {
+        modal.style.display = 'none';
+        if (window.carouselEngine) {
+            window.carouselEngine.isProcessing = false;
+            window.carouselEngine.setButtonsDisabled(false);
+        }
+        if (onContinue) onContinue();
+    };
+
+    modal.style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+}
+
+function renderDebriefRemarks(remarks, hasRemarks) {
+    const container = document.getElementById('debrief-remarks-container');
+    const listEl = document.getElementById('debrief-remarks-list');
+    if (!container || !listEl) return;
+
+    if (!remarks || remarks.length === 0) {
+        container.style.display = 'block';
+        listEl.innerHTML = `
+            <div class="vsm-remarks-empty">
+                <i data-lucide="check-circle-2" style="width: 22px; height: 22px; color: #10b981; flex-shrink: 0;"></i>
+                <div style="font-size: 0.88rem; color: #6ee7b7; font-weight: 600;">
+                    Замечаний по смене не зафиксировано. Стандарты обслуживания и регламенты безопасности ВСМ соблюдены безупречно.
+                </div>
+            </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        return;
+    }
+
+    container.style.display = 'block';
+    let html = '';
+    remarks.forEach(rem => {
+        const sevCls = rem.severity === 'major' ? 'severity-major' : (rem.severity === 'moderate' ? 'severity-moderate' : 'severity-minor');
+        const badgeText = rem.severity === 'major' ? 'Критическое' : (rem.severity === 'moderate' ? 'Умеренное' : 'Незначительное');
+        const iconName = rem.severity === 'major' ? 'alert-triangle' : (rem.severity === 'moderate' ? 'info' : 'check-circle');
+
+        html += `
+            <div class="vsm-remark-item ${sevCls}">
+                <div class="vsm-remark-top">
+                    <span class="vsm-remark-badge ${sevCls}">
+                        <i data-lucide="${iconName}" style="width: 12px; height: 12px;"></i>
+                        ${badgeText}
+                    </span>
+                    <span class="vsm-remark-step">${rem.title || 'Замечание по рейсу'}</span>
+                </div>
+                <div class="vsm-remark-msg">${rem.message || ''}</div>
+                ${rem.recommendation ? `<div class="vsm-remark-rec">Рекомендация: ${rem.recommendation}</div>` : ''}
+            </div>
+        `;
+    });
+    listEl.innerHTML = html;
+    if (window.lucide) lucide.createIcons();
+}
+
+function showSuccessDebrief(summary) {
+    if (window.carouselEngine) {
+        window.carouselEngine.stopTimer();
+        window.carouselEngine.cancelVoiceRecording(false);
+        if (window.carouselEngine.audio) window.carouselEngine.audio.stopSpeech();
+        window.carouselEngine.isProcessing = false;
+        window.carouselEngine.setButtonsDisabled(false);
+    }
+
+    const modal = document.getElementById('debrief-modal');
+    if (!modal) return;
+
+    const isPerfect = summary.is_perfect;
+    const badge = document.getElementById('debrief-badge');
+    const title = document.getElementById('debrief-title');
+    const subtitle = document.getElementById('debrief-subtitle');
+    const iconBox = document.getElementById('debrief-icon-box');
+    const icon = document.getElementById('debrief-icon');
+    const mistakesEl = document.getElementById('debrief-mistakes');
+    const nextBtnText = document.getElementById('debrief-next-shift-text');
+
+    if (isPerfect) {
+        if (badge) {
+            badge.textContent = 'БЕЗУПРЕЧНАЯ СМЕНА';
+            badge.style.background = 'rgba(16, 185, 129, 0.2)';
+            badge.style.borderColor = '#10b981';
+            badge.style.color = '#34d399';
+        }
+        if (title) title.textContent = `Смена №${summary.shift_number || 1} сдана безупречно!`;
+        if (subtitle) subtitle.textContent = 'Поезд прибыл в Санкт-Петербург строго по графику без единого замечания. Начислен премиальный бонус +250 XP!';
+        if (iconBox) {
+            iconBox.style.background = "rgba(16, 185, 129, 0.2)";
+            iconBox.style.borderColor = "#10b981";
+        }
+        if (icon) {
+            icon.setAttribute('data-lucide', 'award');
+            icon.style.color = "#10b981";
+        }
+        if (mistakesEl) {
+            mistakesEl.textContent = '0';
+            mistakesEl.style.color = '#10b981';
+        }
+    } else {
+        if (badge) {
+            badge.textContent = 'СМЕНА СДАНА С ЗАМЕЧАНИЯМИ';
+            badge.style.background = 'rgba(245, 158, 11, 0.2)';
+            badge.style.borderColor = '#f59e0b';
+            badge.style.color = '#fbbf24';
+        }
+        if (title) title.textContent = `Смена №${summary.shift_number || 1} завершена с замечаниями`;
+        const mistakeWord = summary.mistakes_count === 1 ? 'замечание' : (summary.mistakes_count < 5 ? 'замечания' : 'замечаний');
+        if (subtitle) subtitle.textContent = `Поезд успешно прибыл в пункт назначения, однако зафиксировано ${summary.mistakes_count || 1} ${mistakeWord} по соблюдению регламентов ВСМ.`;
+        if (iconBox) {
+            iconBox.style.background = "rgba(245, 158, 11, 0.2)";
+            iconBox.style.borderColor = "#f59e0b";
+        }
+        if (icon) {
+            icon.setAttribute('data-lucide', 'check-circle-2');
+            icon.style.color = "#fbbf24";
+        }
+        if (mistakesEl) {
+            mistakesEl.textContent = summary.mistakes_count || 0;
+            mistakesEl.style.color = '#f87171';
+        }
+    }
+
+    const failDetails = document.getElementById('debrief-failure-details');
+    if (failDetails) failDetails.style.display = 'none';
+
+    const stationsEl = document.getElementById('debrief-stations');
+    if (stationsEl) stationsEl.textContent = `${summary.challenges_solved || 8} / ${summary.target_challenges_count || 8}`;
+
+    const streakEl = document.getElementById('debrief-streak');
+    if (streakEl) streakEl.textContent = summary.max_streak || 0;
+
+    const scoreEl = document.getElementById('debrief-score');
+    if (scoreEl) scoreEl.textContent = (summary.total_score || 0).toLocaleString('ru-RU');
+
+    const xpEl = document.getElementById('debrief-xp');
+    if (xpEl) xpEl.textContent = `+${summary.earned_xp || 0} XP`;
+
+    const levelEl = document.getElementById('debrief-level');
+    if (levelEl && summary.conductor_level) levelEl.textContent = `${summary.conductor_level} ур.`;
+
+    const perfectShiftsEl = document.getElementById('debrief-perfect-shifts');
+    if (perfectShiftsEl && summary.perfect_shifts !== undefined) perfectShiftsEl.textContent = summary.perfect_shifts;
+
+    const totalShiftsEl = document.getElementById('debrief-total-shifts');
+    if (totalShiftsEl && summary.shifts_completed !== undefined) totalShiftsEl.textContent = summary.shifts_completed;
+
+    if (nextBtnText) {
+        const nextNum = summary.next_shift_number || ((summary.shift_number || 1) + 1);
+        nextBtnText.textContent = `Заступить на смену №${nextNum}`;
+    }
+
+    renderDebriefRemarks(summary.remarks || [], summary.has_remarks);
+
+    modal.style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+}
+
+function showFailureDebrief(reason, stats, data) {
+    if (window.carouselEngine) {
+        window.carouselEngine.stopTimer();
+        window.carouselEngine.cancelVoiceRecording(false);
+        if (window.carouselEngine.audio) window.carouselEngine.audio.stopSpeech();
+        window.carouselEngine.isProcessing = false;
+        window.carouselEngine.setButtonsDisabled(false);
+    }
+
+    const modal = document.getElementById('debrief-modal');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('debrief-title');
+    if (titleEl) titleEl.textContent = "Сход со смены!";
+
+    const subtitleEl = document.getElementById('debrief-subtitle');
+    if (subtitleEl) subtitleEl.textContent = reason;
+
+    const iconBox = document.getElementById('debrief-icon-box');
+    if (iconBox) {
+        iconBox.style.background = "rgba(253, 3, 58, 0.2)";
+        iconBox.style.borderColor = "#fd033a";
+    }
+    const iconEl = document.getElementById('debrief-icon');
+    if (iconEl) {
+        iconEl.setAttribute('data-lucide', 'alert-triangle');
+        iconEl.style.color = "#fd033a";
+    }
+
+    const badge = document.getElementById('debrief-badge');
+    if (badge) {
+        badge.textContent = 'АВАРИЙНЫЙ СХОД С ЛИНИИ';
+        badge.style.background = 'rgba(253, 3, 58, 0.2)';
+        badge.style.borderColor = '#fd033a';
+        badge.style.color = '#f87171';
+    }
+
+    const failDetails = document.getElementById('debrief-failure-details');
+    if (failDetails) {
+        failDetails.style.display = 'block';
+        const whyText = data && (data.why_wrong || data.explanation || data.feedback) ? (data.why_wrong || data.explanation || data.feedback) : 'Критическое падение безопасности рейса ниже допустимого порога.';
+        const regText = data && data.regulation ? `Нарушенный регламент: ${data.regulation}` : 'Нарушены Правила технической эксплуатации (ПТЭ)';
+        const whyEl = document.getElementById('debrief-failure-why');
+        const regEl = document.getElementById('debrief-failure-reg');
+        if (whyEl) whyEl.textContent = whyText;
+        if (regEl) regEl.textContent = regText;
+    }
+
+    const stationsEl = document.getElementById('debrief-stations');
+    if (stationsEl) stationsEl.textContent = `${stats ? (stats.challenges_solved || 0) : 0} / 8`;
+
+    const mistakesEl = document.getElementById('debrief-mistakes');
+    if (mistakesEl) {
+        mistakesEl.textContent = stats ? (stats.mistakes_count || 1) : 1;
+        mistakesEl.style.color = '#fd033a';
+    }
+
+    const streakEl = document.getElementById('debrief-streak');
+    if (streakEl) streakEl.textContent = stats ? (stats.max_streak || 0) : 0;
+
+    const scoreEl = document.getElementById('debrief-score');
+    if (scoreEl) scoreEl.textContent = stats ? (stats.total_score || 0).toLocaleString('ru-RU') : 0;
+
+    const xpEl = document.getElementById('debrief-xp');
+    if (xpEl) xpEl.textContent = `+${stats ? (stats.earned_xp || 0) : 0} XP`;
+
+    const nextBtnText = document.getElementById('debrief-next-shift-text');
+    if (nextBtnText) {
+        nextBtnText.textContent = 'Повторить попытку смены';
+    }
+
+    const rems = (data && data.remarks) ? data.remarks : (stats && stats.remarks ? stats.remarks : []);
+    renderDebriefRemarks(rems, true);
+
+    modal.style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+}
+
+// Закрытие модалок по клику на фон и по Escape с переходом на пульт управления
+document.addEventListener('click', (e) => {
+    const debriefModal = document.getElementById('debrief-modal');
+    if (debriefModal && e.target === debriefModal) {
+        closeDebriefModal(true);
+    }
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const debriefModal = document.getElementById('debrief-modal');
+        if (debriefModal && debriefModal.style.display !== 'none') {
+            closeDebriefModal(true);
+        }
+    }
+});
+
+// Запуск при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    window.carouselEngine = new EndlessCarouselEngine();
+    window.carouselEngine.init();
+});
+</script>
+{% endblock %}

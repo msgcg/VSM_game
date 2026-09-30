@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="teaColor" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ea580c" stop-opacity="0.85"/>
+      <stop offset="60%" stop-color="#c2410c" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </linearGradient>
+    <linearGradient id="podMetal" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e2e8f0"/>
+      <stop offset="25%" stop-color="#f8fafc"/>
+      <stop offset="50%" stop-color="#94a3b8"/>
+      <stop offset="85%" stop-color="#cbd5e1"/>
+      <stop offset="100%" stop-color="#64748b"/>
+    </linearGradient>
+    <linearGradient id="goldDetail" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ca8a04"/>
+      <stop offset="50%" stop-color="#facc15"/>
+      <stop offset="100%" stop-color="#a16207"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Струйки пара от горячего чая -->
+  <path d="M50 20 Q54 12 48 4 T52 -4" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M60 22 Q66 14 60 6 T64 -2" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M70 20 Q74 13 68 5 T72 -3" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Стеклянный граненый стакан -->
+  <path d="M42 28 L46 90 L74 90 L78 28 Z" fill="url(#teaColor)" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+
+  <!-- Грани стакана (вертикальные блики) -->
+  <line x1="50" y1="30" x2="52" y2="88" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+  <line x1="58" y1="30" x2="59" y2="88" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+  <line x1="66" y1="30" x2="65" y2="88" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+
+  <!-- Ложечка в стакане -->
+  <path d="M64 12 L56 70" stroke="url(#podMetal)" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="64" cy="12" rx="3.5" ry="5" fill="url(#podMetal)"/>
+
+  <!-- Долька лимона на краю -->
+  <circle cx="43" cy="27" r="9" fill="#facc15" stroke="#ca8a04" stroke-width="1.2"/>
+  <circle cx="43" cy="27" r="7.5" fill="#fef08a"/>
+  <!-- Прожилки лимона -->
+  <path d="M43 27 L43 20 M43 27 L49 22 M43 27 L50 27 M43 27 L48 33 M43 27 L43 34 M43 27 L37 32 M43 27 L36 27 M43 27 L38 21" stroke="#ca8a04" stroke-width="0.8"/>
+
+  <!-- Мельхиоровый подстаканник скоростного поезда с резным узором -->
+  <path d="M41 54 L44 94 L76 94 L79 54 Z" fill="url(#podMetal)" stroke="#475569" stroke-width="1.5"/>
+  <!-- Ручка подстаканника -->
+  <path d="M78 60 C96 60 96 90 75 92" fill="none" stroke="url(#podMetal)" stroke-width="5" stroke-linecap="round"/>
+  
+  <!-- Барельеф герба ВСМ / поезд «Белый кречет» на подстаканнике -->
+  <rect x="48" y="62" width="24" height="22" rx="4" fill="url(#goldDetail)" stroke="#a16207" stroke-width="1"/>
+  <text x="60" y="72" fill="#000" font-size="4.5" font-family="Montserrat" font-weight="900" text-anchor="middle">ВСМ</text>
+  <path d="M52 76 L68 76" stroke="#000" stroke-width="1.2"/>
+  <text x="60" y="81" fill="#000" font-size="3" font-family="Montserrat" font-weight="800" text-anchor="middle">2026</text>
+
+  <!-- Массивное основание подстаканника -->
+  <rect x="36" y="94" width="48" height="6" rx="3" fill="url(#podMetal)" stroke="#334155" stroke-width="1.2"/>
+</svg>

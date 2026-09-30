@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="bg5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0369a1"/>
+      <stop offset="100%" stop-color="#0c4a6e"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#bg5)" stroke="#67e8f9" stroke-width="2"/>
+  <circle cx="60" cy="46" r="19" fill="#ffedd5"/>
+  <path d="M42 42 Q60 22 78 42 Q60 28 42 42 Z" fill="#78350f"/>
+  <path d="M26 102 Q32 74 60 74 Q88 74 94 102 Z" fill="#1e293b"/>
+  <!-- Trainee badge -->
+  <rect x="52" y="74" width="16" height="24" rx="2" fill="#ffffff"/>
+  <rect x="55" y="77" width="10" height="5" fill="#0284c7"/>
+  <rect x="55" y="84" width="10" height="2" fill="#94a3b8"/>
+  <rect x="55" y="88" width="8" height="2" fill="#94a3b8"/>
+</svg>

@@ -1,0 +1,716 @@
+{% extends 'simulator/base.html' %}
+{% load static %}
+
+{% block title %}Квалификационный паспорт проводника | {{ conductor.full_name }}{% endblock %}
+
+{% block content %}
+<div class="vsm-profile-grid">
+    <!-- Левая колонка: Цифровое удостоверение проводника ВСМ -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Электронный бейдж ВСМ «Белый кречет» -->
+        <div class="vsm-card" style="background: linear-gradient(145deg, #091428 0%, #0d1e3a 100%); border: 2px solid var(--vsm-cyan); position: relative; overflow: hidden; padding: 2rem 1.5rem; text-align: center; box-shadow: 0 10px 40px rgba(0, 210, 255, 0.2);">
+            <div style="position: absolute; top: -30px; right: -30px; width: 100px; height: 100px; background: rgba(0, 210, 255, 0.15); border-radius: 50%; filter: blur(25px);"></div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--vsm-border); padding-bottom: 0.75rem;">
+                <img src="{% static 'simulator/img/vsm_logo.svg' %}?v=2" alt="ВСМ" style="height: 24px;">
+                <span style="font-size: 0.7rem; font-weight: 800; color: var(--vsm-cyan); letter-spacing: 0.1em; text-transform: uppercase;">СЛУЖЕБНЫЙ ДОПУСК</span>
+            </div>
+
+            <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 1.25rem;">
+                <img src="{% static 'simulator/img/' %}{{ conductor.avatar }}" alt="Conductor Avatar" style="width: 100%; height: 100%; border-radius: 50%; border: 3px solid #38bdf8; box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);">
+                <div style="position: absolute; bottom: 0; right: 4px; background: #10b981; border: 2px solid #000; width: 18px; height: 18px; border-radius: 50%;" title="На линии"></div>
+            </div>
+
+            <h2 style="font-size: 1.3rem; font-weight: 900; color: #ffffff; margin-bottom: 0.25rem;">{{ conductor.full_name }}</h2>
+            <div style="font-size: 0.82rem; color: var(--vsm-cyan); font-weight: 700; margin-bottom: 0.5rem;">
+                {{ conductor.get_rank_display }}
+            </div>
+            
+            <div style="background: rgba(0, 0, 0, 0.4); border-radius: 8px; padding: 0.5rem; margin-bottom: 1.25rem; font-family: monospace; font-size: 0.85rem; color: #94a3b8; letter-spacing: 0.1em;">
+                № {{ conductor.badge_number }}
+            </div>
+
+            <div style="text-align: left; font-size: 0.76rem; color: #cbd5e1; border-top: 1px solid var(--vsm-border); padding-top: 1rem; margin-bottom: 1.25rem;">
+                <div style="margin-bottom: 0.4rem;">
+                    <strong style="color: #fff;">Депо приписки:</strong><br>{{ conductor.depot }}
+                </div>
+                <div>
+                    <strong style="color: #fff;">Допуск скорости:</strong><br>До 400 км/ч (Серия ЭВС2)
+                </div>
+            </div>
+
+            <!-- Специализация обучения -->
+            <div style="text-align: left; font-size: 0.78rem; color: #cbd5e1; border-top: 1px solid var(--vsm-border); padding-top: 1rem;">
+                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 0.4rem;">
+                    Целевая квалификация:
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="vsm-service-pill {% if current_track == 'economy' %}vsm-badge-track-economy{% elif current_track == 'comfort' %}vsm-badge-track-comfort{% elif current_track == 'business' %}vsm-badge-track-business{% else %}vsm-badge-track-all{% endif %}" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                        <i data-lucide="{% if current_track == 'economy' %}shield-check{% elif current_track == 'comfort' %}smile{% elif current_track == 'business' %}crown{% else %}train{% endif %}" style="width: 14px; height: 14px;"></i>
+                        <span>{{ conductor.get_training_track_display }}</span>
+                    </span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Карточка квалификаций по классам ВСМ -->
+        <div class="vsm-card">
+            <h3 style="font-size: 1.05rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                <i data-lucide="award" style="color: var(--vsm-cyan); width: 18px; height: 18px;"></i>
+                <span>Аттестация по классам ВСМ</span>
+            </h3>
+
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                {% for code, t in track_progress.items %}
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; padding: 0.85rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <span style="font-size: 0.84rem; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 0.4rem;">
+                            <i data-lucide="{{ t.icon }}" style="width: 14px; height: 14px; color: {{ t.color }};"></i>
+                            <span>{{ t.title }}</span>
+                        </span>
+                        {% if t.is_certified %}
+                        <span style="font-size: 0.68rem; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.15); padding: 0.15rem 0.45rem; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                            СЕРТИФИЦИРОВАН
+                        </span>
+                        {% else %}
+                        <span style="font-size: 0.68rem; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.15); padding: 0.15rem 0.45rem; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.3);">
+                            {{ t.percentage }}%
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="vsm-progress-track" style="height: 6px; margin: 0.4rem 0;">
+                        <div class="vsm-progress-fill" style="width: {{ t.percentage }}%; background: {{ t.color }};"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #94a3b8; margin-top: 0.25rem;">
+                        <span>Освоено {{ t.passed }} из {{ t.total }} кейсов</span>
+                        {% if t.is_active %}
+                        <span style="color: var(--vsm-cyan); font-weight: 700;">Текущий трек</span>
+                        {% else %}
+                        <a href="{% url 'simulator:set_training_track_web' track=code %}" style="color: var(--vsm-cyan); text-decoration: none; font-weight: 600;">Выбрать</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Правая колонка: Компетенции, Достижения и История -->
+    <div style="display: flex; flex-direction: column; gap: 2rem;">
+        <!-- Прогресс опыта и ранга -->
+        <div class="vsm-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                    <h2 style="font-size: 1.25rem; font-weight: 800; color: #ffffff;">Прогрессия квалификационного ранга</h2>
+                    <div style="font-size: 0.8rem; color: #94a3b8;">{{ conductor.get_rank_display }}</div>
+                </div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: #facc15;">
+                    {{ conductor.experience_points }} <span style="font-size: 0.85rem; color: #94a3b8;">XP</span>
+                </div>
+            </div>
+
+            <div class="vsm-progress-track" style="height: 12px; margin-bottom: 0.6rem;">
+                <div class="vsm-progress-fill" style="width: {{ progress.percentage }}%; background: linear-gradient(90deg, var(--vsm-primary) 0%, var(--vsm-cyan) 100%);"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8;">
+                <span>Уровень {{ conductor.level }} (База: {{ progress.progress_xp }} XP)</span>
+                <span>До уровня {{ conductor.level|add:"1" }}: еще {{ progress.needed_xp }} XP</span>
+            </div>
+        </div>
+
+        <!-- Персональные ключи и токены диалогового ИИ -->
+        <div class="vsm-card" style="border-color: rgba(33, 160, 56, 0.4); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(33, 160, 56, 0.15);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(33, 160, 56, 0.15); border: 1.5px solid #21a038; display: flex; align-items: center; justify-content: center;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10.5" stroke="#21a038" stroke-width="2.2"/>
+                            <path d="M7 12L10.5 15.5L17 9" stroke="#21a038" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 style="font-size: 1.2rem; font-weight: 800; color: #ffffff; margin: 0;">Интеграция с диалоговым ИИ</h2>
+                        <div style="font-size: 0.78rem; color: #94a3b8;">Использование персональных токенов проводника из личного аккаунта разработчика</div>
+                    </div>
+                </div>
+
+                <div>
+                    {% if conductor.sber_auth_key %}
+                    <span style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.76rem; font-weight: 700; background: rgba(33, 160, 56, 0.2); color: #4ade80; border: 1px solid #22c55e;">
+                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
+                        <span>Персональный ключ активен</span>
+                    </span>
+                    {% elif conductor.sber_id %}
+                    <span style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.76rem; font-weight: 700; background: rgba(0, 210, 255, 0.15); color: var(--vsm-cyan); border: 1px solid var(--vsm-cyan);">
+                        <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+                        <span>Вход через Корпоративный ID ({{ conductor.sber_id }})</span>
+                    </span>
+                    {% else %}
+                    <span style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.76rem; font-weight: 700; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">
+                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+                        <span>Личный ключ не настроен (диалог ожидает ключ)</span>
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;">
+                <form id="sber-token-form" onsubmit="saveSberToken(event)">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.4rem;">
+                                Client ID (Идентификатор клиента):
+                            </label>
+                            <input type="text" id="sber-client-id-input" class="vsm-text-input" style="width: 100%; font-family: monospace; font-size: 0.86rem;" placeholder="Пример: 01a07215-cf66-7ec2-bf49-e602f1f833a6" value="{{ conductor.get_sber_client_id }}">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.4rem;">
+                                Client Secret (Секрет клиента):
+                            </label>
+                            <input type="password" id="sber-client-secret-input" class="vsm-text-input" style="width: 100%; font-family: monospace; font-size: 0.86rem;" placeholder="Пример: fce0a0b0-a1d1-4c0b-9bf2-663a40a30efc" value="{{ conductor.get_sber_client_secret }}">
+                        </div>
+                    </div>
+                    <div style="font-size: 0.72rem; color: #94a3b8; margin-top: -0.5rem; margin-bottom: 1rem;">
+                        Каждый проводник имеет свой собственный ключ доступа. Получить учетные данные можно бесплатно в личном кабинете разработчика. Доступ проверяется шлюзом напрямую.
+                    </div>
+
+                    <!-- 4 шага настройки -->
+                    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 0.85rem; margin-bottom: 1rem;">
+                        <div style="font-size: 0.76rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">
+                            <i data-lucide="info" style="width: 13px; height: 13px;"></i>
+                            <span>Инструкция по настройке персонального ключа:</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; font-size: 0.73rem; color: #94a3b8;">
+                            <div style="background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 6px;">
+                                <strong style="color: #4ade80;">1. Авторизация:</strong> перейдите на портал разработчика и войдите со своей учетной записью.
+                            </div>
+                            <div style="background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 6px;">
+                                <strong style="color: #4ade80;">2. Создание:</strong> нажмите «Создать проект» для физических лиц (бесплатный тариф).
+                            </div>
+                            <div style="background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 6px;">
+                                <strong style="color: #4ade80;">3. Подключение:</strong> в карточке проекта нажмите «+ Подключить сервис» и выберите диалоговую модель.
+                            </div>
+                            <div style="background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 6px;">
+                                <strong style="color: #4ade80;">4. Копирование:</strong> в разделе ключей скопируйте Client ID и Client Secret (или Base64) и сохраните в поля выше.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 220px;">
+                            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.3rem;">
+                                Тарифный Scope API:
+                            </label>
+                            <select id="sber-scope-select" class="vsm-text-input" style="width: 100%; padding: 0.5rem 0.75rem;">
+                                <option value="GIGACHAT_API_PERS" {% if conductor.sber_scope == 'GIGACHAT_API_PERS' or not conductor.sber_scope %}selected{% endif %}>Базовый доступ (Физические лица / Бесплатный)</option>
+                                <option value="GIGACHAT_API_CORP" {% if conductor.sber_scope == 'GIGACHAT_API_CORP' %}selected{% endif %}>Корпоративный доступ (Юридические лица)</option>
+                            </select>
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem; align-items: flex-end; padding-top: 1.25rem;">
+                            <button type="submit" id="sber-save-btn" class="vsm-btn" style="background: #21a038; color: #ffffff; padding: 0.65rem 1.25rem; font-weight: 700;">
+                                <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                                <span>Проверить и сохранить ключ</span>
+                            </button>
+                            {% if conductor.sber_auth_key %}
+                            <button type="button" onclick="clearSberToken()" class="vsm-btn vsm-btn-outline" style="border-color: rgba(239, 68, 68, 0.4); color: #f87171; padding: 0.65rem 1rem;">
+                                <span>Удалить ключ</span>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+
+                <div id="sber-token-feedback" style="display: none; margin-top: 0.85rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600;"></div>
+            </div>
+
+            <!-- Бортовой речевой комплекс ВСМ (Аппаратный STT Vulkan + Neural TTS) -->
+            <div style="background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(0, 210, 255, 0.2); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i data-lucide="cpu" style="width: 18px; height: 18px; color: var(--vsm-cyan);"></i>
+                        <span style="font-size: 0.95rem; font-weight: 800; color: #ffffff;">Бортовой речевой комплекс ВСМ (Аппаратный STT Vulkan + Neural TTS)</span>
+                    </div>
+                    <div>
+                        <span style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.65rem; border-radius: 20px; font-size: 0.72rem; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid #10b981;">
+                            <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                            <span>GPU Vulkan активен (~0.6 сек)</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5;">
+                    <div>• <strong>Распознавание речи проводника (STT):</strong> работает локально на видеокарте через аппаратный модуль <strong>Vulkan GPU</strong>. Никаких внешних подписок и задержек.</div>
+                    <div>• <strong>Многоголосый синтез (TTS):</strong> реплики персонажей и поездные радиограммы озвучиваются в реальном времени нейросетевыми голосами (Дмитрий / Светлана) прямо в оперативной памяти без засорения диска.</div>
+                </div>
+            </div>
+
+            <!-- Инструкция для разработчика -->
+            <details style="font-size: 0.78rem; color: #94a3b8; background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 0.65rem 1rem; cursor: pointer;">
+                <summary style="font-weight: 700; color: #cbd5e1; outline: none;">
+                    Параметры для интегратора: Настройка приложения в Единый ID OAuth 2.0
+                </summary>
+                <div style="margin-top: 0.6rem; line-height: 1.6;">
+                    <div>• <strong>Callback URL (Redirect URI):</strong> <code style="background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; color: var(--vsm-cyan);">http://127.0.0.1:8000/auth/sber/callback/</code></div>
+                    <div>• <strong>Client ID:</strong> <code style="background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; color: #cbd5e1;">01a07215-cf66-7ec2-bf49-e602f1f833a6</code> (или задайте в .env: <code style="color: #4ade80;">SBER_ID_CLIENT_ID</code>)</div>
+                    <div>• <strong>Client Secret:</strong> укажите в .env: <code style="color: #4ade80;">SBER_ID_CLIENT_SECRET=...</code></div>
+                    <div>• <strong>Scope:</strong> <code style="color: #cbd5e1;">openid profile</code></div>
+                </div>
+            </details>
+        </div>
+
+        <!-- Компетенции проводника -->
+        <div class="vsm-card">
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i data-lucide="target" style="color: var(--vsm-cyan); width: 20px; height: 20px;"></i>
+                <span>Аттестационная карта компетенций ВСМ</span>
+            </h2>
+
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                {% for cs in competency_scores %}
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <div>
+                            <span style="font-size: 0.9rem; font-weight: 700; color: #ffffff;">{{ cs.competency.title }}</span>
+                            <div style="font-size: 0.75rem; color: #94a3b8;">{{ cs.competency.description }}</div>
+                        </div>
+                        <span style="font-size: 1.15rem; font-weight: 900; color: {{ cs.competency.color }};">{{ cs.score }}%</span>
+                    </div>
+                    <div class="vsm-progress-track" style="height: 8px;">
+                        <div class="vsm-progress-fill" style="width: {{ cs.score }}%; background: {{ cs.competency.color }};"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Зал славы и Достижения -->
+        <div class="vsm-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <h2 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="award" style="color: #facc15; width: 20px; height: 20px;"></i>
+                    <span>Комната трофеев и наград</span>
+                </h2>
+                <span style="font-size: 0.8rem; color: var(--vsm-cyan); font-weight: 700;">
+                    Открыто: {{ conductor.achievements.count }} из {{ achievements_display|length }}
+                </span>
+            </div>
+
+            <div class="vsm-achievements-grid">
+                {% for item in achievements_display %}
+                <div class="vsm-achievement-badge {% if not item.unlocked %}locked{% endif %}">
+                    <div class="vsm-ach-icon" style="background: {{ item.achievement.badge_color }}; color: #fff;">
+                        <i data-lucide="{{ item.achievement.icon_name }}" style="width: 22px; height: 22px;"></i>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                            <span style="font-size: 0.88rem; font-weight: 800; color: #ffffff;">{{ item.achievement.title }}</span>
+                            {% if item.unlocked %}
+                            <i data-lucide="check-circle-2" style="width: 14px; height: 14px; color: #10b981;"></i>
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 0.74rem; color: #94a3b8; margin: 0.2rem 0;">
+                            {{ item.achievement.description }}
+                        </div>
+                        <div style="font-size: 0.7rem; font-weight: 700; color: #facc15;">
+                            +{{ item.achievement.xp_reward }} XP • {{ item.achievement.get_rarity_display }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Поездной экипаж (Бригада поезда «Белый кречет») -->
+        <div class="vsm-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h2 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                        <i data-lucide="users-round" style="color: var(--vsm-cyan); width: 22px; height: 22px;"></i>
+                        <span>Поездной экипаж (Бригада)</span>
+                    </h2>
+                    <div style="font-size: 0.8rem; color: #94a3b8;">
+                        Слаженность действий бригады повышает синергию и стрессоустойчивость рейса
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                    <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 0.4rem 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i data-lucide="zap" style="width: 16px; height: 16px; color: #10b981;"></i>
+                        <div>
+                            <div style="font-size: 0.68rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Синергия экипажа</div>
+                            <div id="crew-synergy-val" style="font-size: 1.05rem; font-weight: 900; color: #10b981;">{{ crew_synergy }}%</div>
+                        </div>
+                    </div>
+                    <span id="crew-count-badge" class="vsm-badge vsm-badge-info" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                        В составе: {{ crew_members.count }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Текущий состав экипажа -->
+            <div id="crew-list-container" class="vsm-crew-grid" style="margin-bottom: 1.5rem;">
+                {% for member in crew_members %}
+                <div id="crew-card-{{ member.id }}" class="vsm-crew-card">
+                    <div style="display: flex; gap: 0.85rem; align-items: center;">
+                        <img src="{% static 'simulator/img/' %}{{ member.avatar }}" alt="{{ member.full_name }}" class="vsm-crew-avatar">
+                        <div>
+                            <div style="font-weight: 800; color: #fff; font-size: 0.95rem;">{{ member.full_name }}</div>
+                            <div style="font-size: 0.74rem; color: var(--vsm-cyan); font-weight: 600;">{{ member.get_rank_display }}</div>
+                            <div style="font-size: 0.7rem; color: #94a3b8;">{{ member.depot }} • Жетон №{{ member.badge_number }}</div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; font-size: 0.74rem; background: rgba(0, 0, 0, 0.3); padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                        <span>Ур. {{ member.level }} ({{ member.experience_points }} XP)</span>
+                        <span style="color: #10b981;">Лояльность {{ member.loyalty_rating }}%</span>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button onclick="removeCrewMember({{ member.id }}, '{{ member.full_name|escapejs }}')" class="vsm-btn vsm-btn-ghost" style="padding: 0.3rem 0.7rem; font-size: 0.74rem; color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">
+                            <i data-lucide="user-minus" style="width: 13px; height: 13px;"></i>
+                            <span>Исключить</span>
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <div id="crew-empty-notice" style="grid-column: 1 / -1; text-align: center; padding: 1.5rem; background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 12px; color: #94a3b8; font-size: 0.85rem;">
+                    <i data-lucide="users" style="width: 32px; height: 32px; color: #64748b; margin-bottom: 0.5rem;"></i>
+                    <div>Ваш поездной экипаж пока формируется. Добавьте коллег из предложенных ниже или из таблицы лидеров.</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Рекомендуемые проводники в состав экипажа -->
+            {% if suggested_crew %}
+            <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+                    <span style="font-size: 0.82rem; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.05em;">
+                        Рекомендуемые коллеги для совместных рейсов
+                    </span>
+                    <a href="{% url 'simulator:leaderboard' %}" style="font-size: 0.78rem; color: var(--vsm-cyan); text-decoration: none; font-weight: 700; display: flex; align-items: center; gap: 0.3rem;">
+                        <span>Весь рейтинг депо</span>
+                        <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+                    </a>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.75rem;">
+                    {% for sc in suggested_crew %}
+                    <div id="suggested-card-{{ sc.id }}" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 0.75rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.6rem; min-width: 0;">
+                            <img src="{% static 'simulator/img/' %}{{ sc.avatar }}" alt="" style="width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--vsm-cyan); flex-shrink: 0;">
+                            <div style="overflow: hidden;">
+                                <div style="font-size: 0.85rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ sc.full_name }}</div>
+                                <div style="font-size: 0.7rem; color: #94a3b8;">Ур. {{ sc.level }} • {{ sc.depot }}</div>
+                            </div>
+                        </div>
+                        <button onclick="addCrewMember({{ sc.id }}, '{{ sc.full_name|escapejs }}')" class="vsm-btn vsm-btn-outline" style="padding: 0.3rem 0.65rem; font-size: 0.74rem; flex-shrink: 0;">
+                            <i data-lucide="user-plus" style="width: 13px; height: 13px;"></i>
+                            <span>В экипаж</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Журнал последних рейсов -->
+        <div class="vsm-card">
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i data-lucide="history" style="color: var(--vsm-cyan); width: 20px; height: 20px;"></i>
+                <span>Бортовой журнал предыдущих смен</span>
+            </h2>
+
+            <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                {% for s in history_sessions %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.03); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05); flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <div style="font-size: 0.9rem; font-weight: 700; color: #fff;">{{ s.scenario.title }}</div>
+                        <div style="font-size: 0.72rem; color: #94a3b8;">{{ s.started_at|date:"d.m.Y H:i" }} • {{ s.scenario.train_speed }} км/ч</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        {% if s.is_success %}
+                        <span style="font-size: 0.78rem; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.15); padding: 3px 8px; border-radius: 4px;">СМЕНА СДАНА</span>
+                        {% else %}
+                        <span style="font-size: 0.78rem; font-weight: 700; color: #ef4444; background: rgba(239, 68, 68, 0.15); padding: 3px 8px; border-radius: 4px;">ШТРАФ</span>
+                        {% endif %}
+                        <span style="font-size: 0.9rem; font-weight: 800; color: #facc15;">+{{ s.earned_xp }} XP</span>
+                        <a href="{% url 'simulator:simulation_result' session_id=s.id %}" class="vsm-btn vsm-btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;">
+                            Разбор
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align: center; color: #94a3b8; padding: 1.5rem; font-size: 0.85rem;">
+                    Журнал пуст. Начните свою первую учебную смену в разделе «Сценарии рейса».
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Зона сброса данных аккаунта -->
+        <div style="background: rgba(13, 22, 41, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #ef4444; border-radius: 16px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                    <i data-lucide="shield-alert" style="width: 18px; height: 18px; color: #ef4444;"></i>
+                    <span style="font-size: 1rem; font-weight: 800; color: #ffffff;">Сброс квалификационного прогресса проводника</span>
+                </div>
+                <div style="font-size: 0.8rem; color: #94a3b8; max-width: 650px; line-height: 1.5;">
+                    Возвращает проводника к 1 уровню (Стажёр, 100 XP), удаляет историю завершенных смен, очищает список достижений и сбрасывает баллы компетенций к базовым 50%.
+                </div>
+            </div>
+            <button onclick="openResetModal()" class="vsm-btn" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; font-weight: 700; padding: 0.6rem 1.25rem; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                <span>Сбросить данные аккаунта</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения сброса -->
+<div id="reset-confirm-modal" class="vsm-modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(3, 7, 18, 0.88); backdrop-filter: blur(12px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem;">
+    <div style="background: linear-gradient(145deg, #0d1629 0%, #070d1a 100%); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 20px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(239, 68, 68, 0.15); max-width: 490px; width: 100%; padding: 2rem; position: relative;">
+        <!-- Иконка закрытия в углу -->
+        <button type="button" onclick="closeResetModal()" style="position: absolute; top: 1.25rem; right: 1.25rem; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #94a3b8; cursor: pointer;" title="Закрыть">
+            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+        </button>
+
+        <div style="display: flex; align-items: center; gap: 0.85rem; margin-bottom: 1.25rem;">
+            <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); display: flex; align-items: center; justify-content: center; color: #f87171; flex-shrink: 0;">
+                <i data-lucide="alert-triangle" style="width: 24px; height: 24px;"></i>
+            </div>
+            <div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin: 0;">Сброс квалификации</h3>
+                <div style="font-size: 0.78rem; color: #f87171; font-weight: 600;">Необратимое действие учетной записи</div>
+            </div>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 12px; padding: 1.1rem; margin-bottom: 1.5rem; font-size: 0.88rem; color: #cbd5e1; line-height: 1.55;">
+            Вы подтверждаете сброс всех данных проводника <strong>{{ conductor.full_name }}</strong>?
+            <div style="margin-top: 0.6rem; font-size: 0.78rem; color: #94a3b8; line-height: 1.5;">
+                • Ранг и опыт будут сброшены к 1 уровню (100 XP)<br>
+                • Список завершенных смен и полученных наград будет очищен<br>
+                • Все шкалы компетенций вернутся к базовым 50%
+            </div>
+        </div>
+
+        <form method="post" action="{% url 'simulator:reset_account_data' %}" style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            {% csrf_token %}
+            <button type="button" onclick="closeResetModal()" class="vsm-btn vsm-btn-secondary" style="padding: 0.55rem 1.15rem; font-size: 0.85rem;">
+                Отмена
+            </button>
+            <button type="submit" class="vsm-btn" style="background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); border: 1px solid rgba(239, 68, 68, 0.6); color: #ffffff; padding: 0.55rem 1.25rem; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(225, 29, 72, 0.35);">
+                Подтвердить сброс
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function openResetModal() {
+        const modal = document.getElementById('reset-confirm-modal');
+        if (modal) modal.style.display = 'flex';
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function closeResetModal() {
+        const modal = document.getElementById('reset-confirm-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function addCrewMember(profileId, name) {
+        fetch(`/api/crew/add/${profileId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                window.vsmAlert(data.error || 'Ошибка при добавлении в экипаж');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            window.vsmAlert('Ошибка связи с сервером');
+        });
+    }
+
+    async function removeCrewMember(profileId, name) {
+        const confirmed = await window.vsmConfirm({
+            title: 'Исключение из экипажа',
+            message: `Исключить проводника <strong>${escapeHtml(name)}</strong> из состава поездного экипажа?`,
+            confirmText: 'Исключить',
+            cancelText: 'Отмена',
+            isDanger: true
+        });
+        if (!confirmed) return;
+
+        fetch(`/api/crew/remove/${profileId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                window.vsmAlert(data.error || 'Ошибка при исключении из экипажа');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            window.vsmAlert('Ошибка связи с сервером');
+        });
+    }
+
+    async function saveSberToken(e) {
+        if (e) e.preventDefault();
+        const idInput = document.getElementById('sber-client-id-input');
+        const secretInput = document.getElementById('sber-client-secret-input');
+        const scopeSelect = document.getElementById('sber-scope-select');
+        const feedbackEl = document.getElementById('sber-token-feedback');
+        const saveBtn = document.getElementById('sber-save-btn');
+
+        let clientId = idInput ? idInput.value.trim() : '';
+        let clientSecret = secretInput ? secretInput.value.trim() : '';
+        const scope = scopeSelect ? scopeSelect.value : 'GIGACHAT_API_PERS';
+
+        // Проверяем, не вставлен ли полный Base64 в одно из полей
+        function checkSplit(val) {
+            try {
+                const dec = atob(val.trim());
+                if (dec && dec.includes(':')) {
+                    const parts = dec.split(':');
+                    if (parts[0] && parts[1]) {
+                        clientId = parts[0];
+                        clientSecret = parts[1];
+                        if (idInput) idInput.value = clientId;
+                        if (secretInput) secretInput.value = clientSecret;
+                        return true;
+                    }
+                }
+            } catch (err) {}
+            return false;
+        }
+
+        if (clientId && !clientSecret) checkSplit(clientId);
+        else if (clientSecret && !clientId) checkSplit(clientSecret);
+
+        if (!clientId || !clientSecret) {
+            if (feedbackEl) {
+                feedbackEl.style.display = 'block';
+                feedbackEl.style.background = 'rgba(239, 68, 68, 0.15)';
+                feedbackEl.style.color = '#fca5a5';
+                feedbackEl.style.border = '1px solid #ef4444';
+                feedbackEl.textContent = 'Укажите и Client ID, и Client Secret из кабинета разработчика';
+            }
+            return;
+        }
+
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span>Проверка через шлюз ИИ...</span>';
+        }
+
+        try {
+            const resp = await fetch('/api/v1/conductor/sber-credentials/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, scope: scope })
+            });
+
+            const resData = await resp.json();
+            if (resData.ok) {
+                if (feedbackEl) {
+                    feedbackEl.style.display = 'block';
+                    feedbackEl.style.background = 'rgba(34, 197, 94, 0.15)';
+                    feedbackEl.style.color = '#4ade80';
+                    feedbackEl.style.border = '1px solid #22c55e';
+                    feedbackEl.textContent = 'Успешно! Ключи верифицированы шлюзом и сохранены в вашем профиле.';
+                }
+                setTimeout(() => window.location.reload(), 1200);
+            } else {
+                if (feedbackEl) {
+                    feedbackEl.style.display = 'block';
+                    feedbackEl.style.background = 'rgba(239, 68, 68, 0.15)';
+                    feedbackEl.style.color = '#fca5a5';
+                    feedbackEl.style.border = '1px solid #ef4444';
+                    feedbackEl.textContent = resData.error || 'Ошибка проверки ключей ИИ';
+                }
+            }
+        } catch (err) {
+            if (feedbackEl) {
+                feedbackEl.style.display = 'block';
+                feedbackEl.style.background = 'rgba(239, 68, 68, 0.15)';
+                feedbackEl.style.color = '#fca5a5';
+                feedbackEl.style.border = '1px solid #ef4444';
+                feedbackEl.textContent = 'Сетевая ошибка при связи с сервером тренажера';
+            }
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i data-lucide="check" style="width: 16px; height: 16px;"></i><span>Проверить и сохранить ключ</span>';
+                if (window.lucide) window.lucide.createIcons();
+            }
+        }
+    }
+
+    async function clearSberToken() {
+        const confirmed = await window.vsmConfirm({
+            title: 'Удаление личного ключа диалогового ИИ',
+            message: 'Удалить персональный ключ из профиля? Система вернется к использованию резервного шлюза.',
+            confirmText: 'Удалить',
+            cancelText: 'Отмена',
+            isDanger: true
+        });
+        if (!confirmed) return;
+
+        try {
+            const resp = await fetch('/api/v1/conductor/sber-credentials/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ auth_key: '' })
+            });
+            const data = await resp.json();
+            if (data.ok) {
+                window.location.reload();
+            }
+        } catch (e) {
+            window.vsmAlert('Ошибка при удалении ключа');
+        }
+    }
+</script>
+{% endblock %}

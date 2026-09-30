@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="ukBody" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+    <linearGradient id="ukScreen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0c4a6e"/>
+    </linearGradient>
+    <filter id="ukGlow">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#00d2ff" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Прорезиненный защитный бампер терминала -->
+  <rect x="34" y="16" width="52" height="92" rx="14" fill="#0f172a" stroke="#00d2ff" stroke-width="2"/>
+  <!-- Рельефные боковые вставки для удержания -->
+  <path d="M32 35 L34 38 L34 50 L32 53 Z M32 60 L34 63 L34 75 L32 78 Z" fill="#38bdf8"/>
+  <path d="M88 35 L86 38 L86 50 L88 53 Z M88 60 L86 63 L86 75 L88 78 Z" fill="#38bdf8"/>
+
+  <!-- Верхний лазерный сканер штрихкодов / QR -->
+  <rect x="44" y="13" width="32" height="6" rx="2" fill="#ef4444"/>
+  <!-- Красный сканирующий лазерный луч -->
+  <polygon points="46,13 74,13 90,0 30,0" fill="#ef4444" opacity="0.25"/>
+
+  <!-- Сенсорный экран терминала УКЭБ -->
+  <rect x="38" y="24" width="44" height="60" rx="6" fill="url(#ukScreen)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+
+  <!-- Интерфейс проверки билета на экране -->
+  <rect x="42" y="28" width="36" height="8" rx="2" fill="#082a99"/>
+  <text x="60" y="34" fill="#ffffff" font-size="4.2" font-family="Montserrat" font-weight="900" text-anchor="middle">УКЭБ • ВСМ-1</text>
+
+  <!-- Зеленая галочка: Билет подтвержден -->
+  <circle cx="60" cy="48" r="8" fill="#10b981" filter="url(#ukGlow)"/>
+  <path d="M56 48 L59 51 L65 44" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Данные пассажира -->
+  <text x="60" y="63" fill="#ffffff" font-size="3.5" font-family="Montserrat" font-weight="700" text-anchor="middle">МЕСТО: 12А • БИЗНЕС</text>
+  <text x="60" y="68" fill="#38bdf8" font-size="3" font-family="Montserrat" font-weight="600" text-anchor="middle">ПАСПОРТ: РФ ВАЛИДЕН</text>
+  <text x="60" y="73" fill="#94a3b8" font-size="2.8" font-family="monospace" text-anchor="middle">ВСМ №702 БЕЛЫЙ КРЕЧЕТ</text>
+
+  <!-- Кнопки управления под экраном -->
+  <circle cx="60" cy="94" r="6" fill="#334155" stroke="#64748b" stroke-width="1"/>
+  <rect x="42" y="92" width="8" height="4" rx="1.5" fill="#475569"/>
+  <rect x="70" y="92" width="8" height="4" rx="1.5" fill="#475569"/>
+</svg>

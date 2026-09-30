@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="intercomBody" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a3342"/>
+      <stop offset="100%" stop-color="#121820"/>
+    </linearGradient>
+    <linearGradient id="handsetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3d495c"/>
+      <stop offset="50%" stop-color="#252f3e"/>
+      <stop offset="100%" stop-color="#181f2a"/>
+    </linearGradient>
+    <linearGradient id="btnCallGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+    <linearGradient id="pttGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Wall mounting cradle -->
+  <rect x="22" y="16" width="76" height="88" rx="8" fill="url(#intercomBody)" stroke="#475569" stroke-width="2" filter="url(#shadow)"/>
+  
+  <!-- Steel mounting screws -->
+  <circle cx="28" cy="22" r="2.5" fill="#64748b"/>
+  <circle cx="92" cy="22" r="2.5" fill="#64748b"/>
+  <circle cx="28" cy="98" r="2.5" fill="#64748b"/>
+  <circle cx="92" cy="98" r="2.5" fill="#64748b"/>
+  <line x1="26.5" y1="22" x2="29.5" y2="22" stroke="#1e293b" stroke-width="1"/>
+  <line x1="90.5" y1="22" x2="93.5" y2="22" stroke="#1e293b" stroke-width="1"/>
+  
+  <!-- Cradle recess -->
+  <rect x="30" y="28" width="28" height="64" rx="4" fill="#0f172a" stroke="#1e293b" stroke-width="1.5"/>
+
+  <!-- Speaker/mic grille on base -->
+  <g fill="#475569">
+    <circle cx="74" cy="28" r="1.5"/>
+    <circle cx="80" cy="28" r="1.5"/>
+    <circle cx="86" cy="28" r="1.5"/>
+    <circle cx="74" cy="33" r="1.5"/>
+    <circle cx="80" cy="33" r="1.5"/>
+    <circle cx="86" cy="33" r="1.5"/>
+    <circle cx="74" cy="38" r="1.5"/>
+    <circle cx="80" cy="38" r="1.5"/>
+    <circle cx="86" cy="38" r="1.5"/>
+  </g>
+
+  <!-- Control panel on right -->
+  <!-- Call Driver Button -->
+  <rect x="68" y="46" width="24" height="14" rx="3" fill="url(#btnCallGrad)" stroke="#fca5a5" stroke-width="1"/>
+  <text x="80" y="56" fill="#ffffff" font-size="7" font-weight="bold" font-family="sans-serif" text-anchor="middle">МАШИН</text>
+  
+  <!-- Call Head Conductor Button -->
+  <rect x="68" y="64" width="24" height="14" rx="3" fill="#1e293b" stroke="#38bdf8" stroke-width="1"/>
+  <text x="80" y="74" fill="#38bdf8" font-size="6" font-weight="bold" font-family="sans-serif" text-anchor="middle">ЛНП / ШТАБ</text>
+
+  <!-- Status LED -->
+  <circle cx="70" cy="86" r="3" fill="#22c55e"/>
+  <circle cx="70" cy="86" r="5" fill="#22c55e" opacity="0.3"/>
+  <text x="76" y="88" fill="#94a3b8" font-size="6" font-family="sans-serif">СВЯЗЬ</text>
+
+  <!-- Coiled cable connecting handset to base -->
+  <path d="M 38 90 C 35 106, 50 114, 46 102 C 43 94, 58 108, 54 116 C 50 120, 62 110, 60 102 C 58 96, 68 106, 64 112" 
+        fill="none" stroke="#1e293b" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 38 90 C 35 106, 50 114, 46 102 C 43 94, 58 108, 54 116 C 50 120, 62 110, 60 102 C 58 96, 68 106, 64 112" 
+        fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Heavy duty railway handset -->
+  <g filter="url(#shadow)">
+    <!-- Earpiece -->
+    <path d="M 34 20 C 34 16, 54 16, 54 20 L 52 38 C 52 40, 36 40, 36 38 Z" fill="url(#handsetGrad)" stroke="#64748b" stroke-width="1.5"/>
+    <ellipse cx="44" cy="24" rx="7" ry="5" fill="#1e293b"/>
+    <!-- Handle -->
+    <rect x="40" y="36" width="8" height="42" rx="3" fill="url(#handsetGrad)" stroke="#475569" stroke-width="1"/>
+    <!-- PTT Button on the handle -->
+    <rect x="38" y="48" width="3" height="18" rx="1.5" fill="url(#pttGrad)"/>
+    <!-- Mouthpiece -->
+    <path d="M 34 88 C 34 92, 54 92, 54 88 L 52 74 C 52 72, 36 72, 36 74 Z" fill="url(#handsetGrad)" stroke="#64748b" stroke-width="1.5"/>
+    <ellipse cx="44" cy="84" rx="7" ry="5" fill="#1e293b"/>
+    <!-- Sound holes in mouthpiece -->
+    <circle cx="44" cy="84" r="1.5" fill="#0f172a"/>
+    <circle cx="40" cy="84" r="1" fill="#0f172a"/>
+    <circle cx="48" cy="84" r="1" fill="#0f172a"/>
+    <circle cx="44" cy="81" r="1" fill="#0f172a"/>
+    <circle cx="44" cy="87" r="1" fill="#0f172a"/>
+  </g>
+</svg>

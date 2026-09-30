@@ -1,0 +1,1031 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <title>{% block title %}ВСМ «Белый кречет» | Обучающий тренажер проводника{% endblock %}</title>
+    
+    <!-- Фавикон и PWA манифест -->
+    <link rel="icon" type="image/svg+xml" href="{% static 'simulator/img/vsm_logo.svg' %}?v=2">
+    <link rel="alternate icon" type="image/x-icon" href="{% static 'simulator/img/favicon.ico' %}?v=2">
+    <link rel="apple-touch-icon" href="{% static 'simulator/img/vsm_logo.png' %}?v=2">
+    <link rel="manifest" href="{% url 'simulator:manifest_json' %}">
+    <link rel="author" href="{% url 'simulator:humans_txt' %}">
+    <link rel="canonical" href="{{ request.build_absolute_uri }}">
+
+    <!-- Базовые метатеги -->
+    <meta name="theme-color" content="#082a99">
+    <meta name="color-scheme" content="dark">
+    <meta name="description" content="{% block meta_description %}Интерактивный геймифицированный обучающий комплекс для проводников и стюардов высокоскоростных магистралей (ВСМ-1 Москва — Санкт-Петербург, до 400 км/ч).{% endblock %}">
+    <meta name="keywords" content="ВСМ, ВСМ-1, Белый кречет, поезд, проводник, симулятор, обучение, 400 км/ч, Москва Санкт-Петербург, высокоскоростная магистраль">
+    <meta name="author" content="Maxim">
+
+    <!-- Мобильные и PWA параметры -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ВСМ Тренажер">
+
+    <!-- Open Graph / Метаданные для соцсетей и мессенджеров (Telegram и др.) -->
+    <meta property="og:site_name" content="ВСМ-1 «Белый кречет»">
+    <meta property="og:title" content="{% block og_title %}ВСМ «Белый кречет» | Обучающий тренажер проводника{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Интерактивная среда отработки нештатных ситуаций на скорости до 400 км/ч: конфликты, медицина, безопасность и премиальный сервис.{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'simulator/img/train_krechet.png' %}{% endblock %}">
+    <meta property="og:locale" content="ru_RU">
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}ВСМ «Белый кречет» | Обучающий тренажер проводника{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Интерактивная среда отработки нештатных ситуаций на скорости до 400 км/ч.{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'simulator/img/train_krechet.png' %}{% endblock %}">
+
+    <!-- Предзагрузка фирменного шрифта MoscowSans -->
+    <link rel="preload" href="{% static 'simulator/fonts/MoscowSans-Regular.ttf' %}" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="{% static 'simulator/fonts/MoscowSans-ExtraBold.otf' %}" as="font" type="font/otf" crossorigin>
+
+    <!-- Стили -->
+    <link rel="stylesheet" href="{% static 'simulator/css/vsm_style.css' %}">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="vsm-bg-grid"></div>
+    <div id="vsm-top-speed-bar" class="vsm-top-speed-bar loading"></div>
+
+    <!-- Шапка платформы -->
+    <header class="vsm-header">
+        <div class="vsm-header-container">
+            <!-- Логотип -->
+            <a href="{% url 'simulator:dashboard' %}" class="vsm-brand">
+                <img src="{% static 'simulator/img/vsm_logo.svg' %}?v=2" alt="ВСМ-1 «Белый кречет»" class="vsm-logo-img">
+                <div class="vsm-brand-text">
+                    <div class="vsm-brand-title">
+                        <span>ВСМ-1</span>
+                    </div>
+                    <span class="vsm-brand-subtitle">Тренажер проводников «Белый кречет»</span>
+                </div>
+            </a>
+
+            <!-- Навигация -->
+            <nav>
+                <ul class="vsm-nav-links">
+                    <li class="vsm-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                        <a href="{% url 'simulator:dashboard' %}">
+                            <i data-lucide="layout-dashboard" style="width: 16px; height: 16px;"></i>
+                            <span>Главный пульт</span>
+                        </a>
+                    </li>
+                    <li class="vsm-nav-item {% if request.resolver_match.url_name == 'scenario_list' or 'scenario' in request.path %}active{% endif %}">
+                        <a href="{% url 'simulator:scenario_list' %}">
+                            <i data-lucide="play-circle" style="width: 16px; height: 16px;"></i>
+                            <span>Сценарии рейса</span>
+                        </a>
+                    </li>
+                    <li class="vsm-nav-item {% if request.resolver_match.url_name == 'endless_carousel' %}active{% endif %}">
+                        <a href="{% url 'simulator:endless_carousel' %}" style="display: flex; align-items: center; gap: 0.4rem;">
+                            <i data-lucide="zap" style="width: 16px; height: 16px; color: #fd033a;"></i>
+                            <span>Карусель решений</span>
+                        </a>
+                    </li>
+                    <li class="vsm-nav-item {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
+                        <a href="{% url 'simulator:analytics' %}">
+                            <i data-lucide="bar-chart-2" style="width: 16px; height: 16px;"></i>
+                            <span>Аналитика</span>
+                        </a>
+                    </li>
+                    <li class="vsm-nav-item {% if request.resolver_match.url_name == 'regulations' %}active{% endif %}">
+                        <a href="{% url 'simulator:regulations' %}">
+                            <i data-lucide="book-open-check" style="width: 16px; height: 16px;"></i>
+                            <span>Стандарты и ПТЭ</span>
+                        </a>
+                    </li>
+                    <li class="vsm-nav-item vsm-nav-extra {% if request.resolver_match.url_name == 'leaderboard' %}active{% endif %}">
+                        <a href="{% url 'simulator:leaderboard' %}">
+                            <i data-lucide="trophy" style="width: 16px; height: 16px;"></i>
+                            <span>Рейтинг экипажа</span>
+                        </a>
+                    </li>
+                    <li class="vsm-nav-item vsm-nav-extra {% if request.resolver_match.url_name == 'swagger_ui' %}active{% endif %}">
+                        <a href="{% url 'simulator:swagger_ui' %}">
+                            <i data-lucide="code-2" style="width: 16px; height: 16px;"></i>
+                            <span>API Docs</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Правый блок: Уведомления + Звук + Профиль проводника -->
+            <div class="vsm-header-right" style="display: flex; align-items: center;">
+                <!-- Колокольчик уведомлений -->
+                {% if conductor %}
+                <div class="vsm-notif-dropdown-wrap" style="position: relative;">
+                    <button id="vsm-notif-btn" class="vsm-audio-toggle" onclick="toggleNotificationsDropdown()" title="Оповещения экипажа">
+                        <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+                        <span id="vsm-notif-badge" class="vsm-notif-badge" style="{% if conductor.unread_notifications_count == 0 %}display:none;{% endif %}">{{ conductor.unread_notifications_count }}</span>
+                    </button>
+
+                    <div id="vsm-notif-dropdown" class="vsm-notif-dropdown" style="display: none;">
+                        <div class="vsm-notif-header">
+                            <span style="font-weight: 800; font-size: 0.85rem; color: #fff;">Оповещения экипажа</span>
+                            <button onclick="markAllNotificationsRead()" class="vsm-notif-readall-btn">Прочитать все</button>
+                        </div>
+                        <div id="vsm-notif-list" class="vsm-notif-list">
+                            <div style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.8rem;">
+                                Загрузка оповещений...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Кнопка звука (открывает Audio Studio ВСМ) -->
+                <button id="vsm-audio-btn" class="vsm-audio-toggle" onclick="window.vsmAudio.openSettingsModal()" title="Настройки звука и озвучки ВСМ «Белый кречет»">
+                    <i data-lucide="volume-2" style="width: 18px; height: 18px;"></i>
+                </button>
+
+                <!-- Профиль текущего проводника или кнопки Вход / Регистрация -->
+                {% if conductor %}
+                <a href="{% url 'simulator:profile' %}" class="vsm-header-profile" style="text-decoration: none;" title="Личный кабинет проводника">
+                    <img src="{% static 'simulator/img/' %}{{ conductor.avatar }}" alt="Avatar" class="vsm-header-avatar">
+                    <div class="vsm-header-user-info">
+                        <span class="vsm-header-username">{{ conductor.full_name }}</span>
+                        <span class="vsm-header-rank">{{ conductor.get_rank_display }} • Ур. {{ conductor.level }}</span>
+                    </div>
+                </a>
+                <a href="{% url 'simulator:logout' %}" class="vsm-btn vsm-btn-secondary" style="padding: 0.45rem 0.75rem; font-size: 0.78rem;" title="Выйти из системы">
+                    <i data-lucide="log-out" style="width: 15px; height: 15px;"></i>
+                </a>
+                {% else %}
+                <a href="{% url 'simulator:login' %}" class="vsm-btn vsm-btn-secondary" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;">
+                    <i data-lucide="log-in" style="width: 15px; height: 15px;"></i>
+                    <span>Войти</span>
+                </a>
+                <a href="{% url 'simulator:register' %}" class="vsm-btn vsm-btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;">
+                    <i data-lucide="user-plus" style="width: 15px; height: 15px;"></i>
+                    <span>Регистрация</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Основное содержимое страницы -->
+    <main class="vsm-main-content">
+        {% if messages %}
+        <div class="vsm-messages-container" style="max-width: 1200px; margin: 1rem auto 0 auto; padding: 0 1.5rem;">
+            {% for message in messages %}
+            <div class="vsm-alert vsm-alert-{{ message.tags|default:'info' }}" style="margin-bottom: 0.8rem; display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1.25rem; border-radius: 10px; font-size: 0.88rem; font-weight: 600;">
+                <div style="display: flex; align-items: center; gap: 0.65rem;">
+                    {% if message.tags == 'error' or message.tags == 'danger' %}
+                    <i data-lucide="alert-triangle" style="width: 18px; height: 18px; color: #ef4444; flex-shrink: 0;"></i>
+                    {% elif message.tags == 'success' %}
+                    <i data-lucide="check-circle" style="width: 18px; height: 18px; color: #10b981; flex-shrink: 0;"></i>
+                    {% else %}
+                    <i data-lucide="info" style="width: 18px; height: 18px; color: var(--vsm-cyan); flex-shrink: 0;"></i>
+                    {% endif %}
+                    <span>{{ message }}</span>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; color: inherit; cursor: pointer; opacity: 0.7; font-size: 1.1rem; padding: 0 4px; line-height: 1;" title="Закрыть">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Подвал платформы -->
+    <footer class="vsm-footer">
+        <div class="vsm-footer-container">
+            <div>
+                <div style="font-size: 0.88rem; font-weight: 700; color: #ffffff; margin-bottom: 0.3rem;">
+                    Высокоскоростная железнодорожная магистраль Москва — Санкт-Петербург (ВСМ-1)
+                </div>
+                <div style="font-size: 0.76rem; color: #94a3b8;">
+                    Интерактивная образовательная среда подготовки проводников и поездных бригад скоростных электропоездов «Белый кречет».
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <img src="{% static 'simulator/img/vsm_logo.svg' %}?v=2" alt="ВСМ-1" class="vsm-footer-logo-img" style="height: 32px; width: auto; opacity: 0.85;">
+                <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Симуляционный комплекс 2026</span>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+        .vsm-notif-dropdown-wrap { position: relative; }
+        .vsm-notif-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #fd033a;
+            color: #ffffff;
+            font-size: 0.65rem;
+            font-weight: 900;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            border: 2px solid #070c18;
+            box-shadow: 0 0 10px rgba(253, 3, 58, 0.8);
+            pointer-events: none;
+        }
+        .vsm-notif-dropdown {
+            position: absolute;
+            top: calc(100% + 12px);
+            right: 0;
+            width: 360px;
+            max-width: 90vw;
+            background: #0d1629;
+            border: 1.5px solid rgba(0, 210, 255, 0.35);
+            border-radius: 16px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(0, 210, 255, 0.15);
+            z-index: 1000;
+            overflow: hidden;
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .vsm-notif-dropdown {
+                position: fixed !important;
+                top: 68px !important;
+                left: 10px !important;
+                right: 10px !important;
+                width: auto !important;
+                max-width: calc(100vw - 20px) !important;
+                margin: 0 auto !important;
+                border-radius: 16px !important;
+                box-shadow: 0 15px 50px rgba(0, 0, 0, 0.95), 0 0 30px rgba(0, 210, 255, 0.3) !important;
+                z-index: 99999 !important;
+            }
+        }
+        .vsm-notif-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.85rem 1.15rem;
+            background: rgba(8, 42, 153, 0.35);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .vsm-notif-readall-btn {
+            background: none;
+            border: none;
+            color: var(--vsm-cyan);
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .vsm-notif-readall-btn:hover { text-decoration: underline; }
+        .vsm-notif-list { max-height: 380px; overflow-y: auto; }
+        .vsm-notif-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.85rem 1.15rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            color: inherit;
+            transition: background 0.2s;
+        }
+        .vsm-notif-item:hover { background: rgba(255, 255, 255, 0.04); }
+        .vsm-notif-item.unread {
+            background: rgba(0, 210, 255, 0.06);
+            border-left: 3px solid var(--vsm-cyan);
+        }
+        .vsm-notif-item.unread:hover { background: rgba(0, 210, 255, 0.1); }
+    </style>
+
+    <!-- Скрипты -->
+    <script src="{% static 'simulator/js/vsm_audio.js' %}"></script>
+    <script>
+        // Инициализация Lucide иконок
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+
+        // Центр уведомлений проводника
+        function toggleNotificationsDropdown() {
+            const dropdown = document.getElementById('vsm-notif-dropdown');
+            if (!dropdown) return;
+            const isOpen = dropdown.style.display === 'block';
+            dropdown.style.display = isOpen ? 'none' : 'block';
+            if (!isOpen) {
+                loadNotifications();
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const wrap = document.querySelector('.vsm-notif-dropdown-wrap');
+            if (wrap && !wrap.contains(e.target)) {
+                const dropdown = document.getElementById('vsm-notif-dropdown');
+                if (dropdown) dropdown.style.display = 'none';
+            }
+        });
+
+        async function loadNotifications() {
+            const listEl = document.getElementById('vsm-notif-list');
+            if (!listEl) return;
+            try {
+                const res = await fetch('/api/notifications/');
+                const data = await res.json();
+                if (data.success) {
+                    updateNotifBadge(data.unread_count);
+                    if (!data.notifications || data.notifications.length === 0) {
+                        listEl.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.82rem;">Новых оповещений нет</div>';
+                        return;
+                    }
+                    listEl.innerHTML = data.notifications.map(n => `
+                        <div class="vsm-notif-item ${n.is_read ? '' : 'unread'}">
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+                                    <a href="${n.link || '#'}" style="font-size: 0.82rem; font-weight: 800; color: #fff; text-decoration: none; line-height: 1.3;">
+                                        ${escapeHtml(n.title)}
+                                    </a>
+                                    ${!n.is_read ? `<button onclick="markNotificationRead(${n.id}, event)" style="background: none; border: none; color: var(--vsm-cyan); cursor: pointer; font-size: 0.72rem; padding: 0 4px;" title="Отметить прочитанным">&#10003;</button>` : ''}
+                                </div>
+                                <div style="font-size: 0.74rem; color: #94a3b8; margin: 0.25rem 0 0.4rem 0; line-height: 1.35;">
+                                    ${escapeHtml(n.message)}
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; color: #64748b;">
+                                    <span>${n.type_display || n.type}</span>
+                                    <span>${n.created_at}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                listEl.innerHTML = '<div style="padding: 1rem; text-align: center; color: #ef4444; font-size: 0.78rem;">Ошибка загрузки</div>';
+            }
+        }
+
+        async function markNotificationRead(id, e) {
+            if (e) e.stopPropagation();
+            try {
+                const res = await fetch(`/api/notifications/${id}/read/`, {
+                    method: 'POST',
+                    headers: {'X-CSRFToken': getCookie('csrftoken') || ''}
+                });
+                const data = await res.json();
+                if (data.success) {
+                    updateNotifBadge(data.unread_count);
+                    loadNotifications();
+                }
+            } catch (_) {}
+        }
+
+        async function markAllNotificationsRead() {
+            try {
+                const res = await fetch('/api/notifications/read-all/', {
+                    method: 'POST',
+                    headers: {'X-CSRFToken': getCookie('csrftoken') || ''}
+                });
+                const data = await res.json();
+                if (data.success) {
+                    updateNotifBadge(0);
+                    loadNotifications();
+                }
+            } catch (_) {}
+        }
+
+        function updateNotifBadge(count) {
+            const badge = document.getElementById('vsm-notif-badge');
+            if (!badge) return;
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Управление скоростной полосой подгрузки страниц (Top Speed Bar)
+        window.vsmShowLoader = function() {
+            const bar = document.getElementById('vsm-top-speed-bar');
+            if (bar) bar.classList.add('loading');
+        };
+
+        window.vsmHideLoader = function() {
+            const bar = document.getElementById('vsm-top-speed-bar');
+            if (bar) bar.classList.remove('loading');
+        };
+
+        window.addEventListener('load', () => {
+            setTimeout(window.vsmHideLoader, 150);
+        });
+
+        document.addEventListener('click', (e) => {
+            const a = e.target.closest('a');
+            if (a && a.href && !a.target && !a.href.startsWith('javascript:') && !a.href.includes('#') && !a.hasAttribute('download')) {
+                try {
+                    const targetUrl = new URL(a.href, window.location.origin);
+                    if (targetUrl.origin === window.location.origin && targetUrl.pathname !== window.location.pathname) {
+                        window.vsmShowLoader();
+                    }
+                } catch (_) {}
+            }
+        });
+
+        document.addEventListener('submit', () => {
+            window.vsmShowLoader();
+        });
+
+        window.addEventListener('beforeunload', () => {
+            window.vsmShowLoader();
+        });
+    </script>
+
+    <!-- Модальное окно: Аудиостудия и настройки звука ВСМ («Белый кречет») -->
+    <div id="vsm-audio-settings-modal" class="vsm-audio-modal-backdrop" onclick="if(event.target === this) window.vsmAudio.closeSettingsModal();">
+        <div class="vsm-audio-modal-box" role="dialog" aria-modal="true" aria-labelledby="vsm-audio-title">
+            <div class="vsm-audio-modal-header">
+                <div>
+                    <h3 id="vsm-audio-title" class="vsm-audio-modal-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--vsm-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+                        <span>Аудиосистема ВСМ «Белый кречет»</span>
+                    </h3>
+                    <p class="vsm-audio-modal-subtitle">Звуковое сопровождение скоростного экспресса и синтезатор речи (TTS)</p>
+                </div>
+                <button type="button" class="vsm-audio-modal-close" onclick="window.vsmAudio.closeSettingsModal()" title="Закрыть настройки">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div class="vsm-audio-modal-body">
+                <!-- Секция 1: Мастер-громкость -->
+                <div class="vsm-audio-card">
+                    <div class="vsm-audio-card-head">
+                        <h4 class="vsm-audio-card-title" style="display: flex; align-items: center; gap: 0.45rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                            <span>Общий звук (Master)</span>
+                        </h4>
+                        <label class="vsm-toggle-switch" title="Включить / отключить звук">
+                            <input type="checkbox" id="vsm-opt-mute-toggle" checked>
+                            <span class="vsm-toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="vsm-audio-row">
+                        <span class="vsm-audio-label">
+                            <span>Громкость системы</span>
+                            <span class="vsm-audio-sublabel">Влияет на все звуки и голосовую озвучку</span>
+                        </span>
+                        <div class="vsm-audio-slider-wrap">
+                            <input type="range" id="vsm-opt-master-vol" class="vsm-range-slider" min="0" max="100" value="80">
+                            <span id="vsm-val-master-vol" class="vsm-range-val">80%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Секция 2: Эффекты поезда (SFX) -->
+                <div class="vsm-audio-card">
+                    <div class="vsm-audio-card-head">
+                        <h4 class="vsm-audio-card-title" style="display: flex; align-items: center; gap: 0.45rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="16" rx="2"></rect><path d="M4 11h16"></path><path d="M12 3v8"></path><path d="m8 19-2 3"></path><path d="m16 19 2 3"></path><circle cx="8" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>
+                            <span>Звуки поезда и интерфейса (SFX)</span>
+                        </h4>
+                    </div>
+                    <div class="vsm-audio-row">
+                        <span class="vsm-audio-label">Громкость звуковых эффектов</span>
+                        <div class="vsm-audio-slider-wrap">
+                            <input type="range" id="vsm-opt-sfx-vol" class="vsm-range-slider" min="0" max="100" value="85">
+                            <span id="vsm-val-sfx-vol" class="vsm-range-val">85%</span>
+                        </div>
+                    </div>
+
+                    <div class="vsm-audio-row">
+                        <span class="vsm-audio-label">
+                            <span>Перезвон объявлений ВСМ</span>
+                            <span class="vsm-audio-sublabel">Мелодичный гонг перед речью и началом этапа</span>
+                        </span>
+                        <label class="vsm-toggle-switch">
+                            <input type="checkbox" id="vsm-opt-chime-toggle" checked>
+                            <span class="vsm-toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="vsm-audio-row">
+                        <span class="vsm-audio-label">
+                            <span>Звуки кликов и выбора</span>
+                            <span class="vsm-audio-sublabel">Приятный тактильный отклик интерфейса</span>
+                        </span>
+                        <label class="vsm-toggle-switch">
+                            <input type="checkbox" id="vsm-opt-click-toggle" checked>
+                            <span class="vsm-toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="vsm-audio-row">
+                        <span class="vsm-audio-label">
+                            <span>Сигналы тревоги и таймера</span>
+                            <span class="vsm-audio-sublabel">Звуки истечения времени и штрафов</span>
+                        </span>
+                        <label class="vsm-toggle-switch">
+                            <input type="checkbox" id="vsm-opt-warning-toggle" checked>
+                            <span class="vsm-toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="vsm-audio-row">
+                        <span class="vsm-audio-label">
+                            <span>Фоновый шум движения вагона (эмбиент)</span>
+                            <span class="vsm-audio-sublabel">Атмосферный стук колес и аэродинамический гул на 400 км/ч</span>
+                        </span>
+                        <label class="vsm-toggle-switch">
+                            <input type="checkbox" id="vsm-opt-ambient-toggle" checked>
+                            <span class="vsm-toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="vsm-audio-row" id="vsm-ambient-vol-row">
+                        <span class="vsm-audio-label">Громкость эмбиента вагона</span>
+                        <div class="vsm-audio-slider-wrap">
+                            <input type="range" id="vsm-opt-ambient-vol" class="vsm-range-slider" min="0" max="100" value="10">
+                            <span id="vsm-val-ambient-vol" class="vsm-range-val">10%</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Прослушать сэмплы:</span>
+                        <div class="vsm-audio-test-grid">
+                            <button type="button" class="vsm-audio-pill-btn" onclick="window.vsmAudio.testSound('chime')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--vsm-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                                <span>Перезвон</span>
+                            </button>
+                            <button type="button" class="vsm-audio-pill-btn" onclick="window.vsmAudio.testSound('click')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 9 5 12 1.8-5.2L21 14Z"></path><path d="M7.2 2.2 8 5.1"></path><path d="m5.1 8-2.9-.8"></path><path d="M14 4.1 12 6"></path><path d="m6 12-1.9 2"></path></svg>
+                                <span>Клик</span>
+                            </button>
+                            <button type="button" class="vsm-audio-pill-btn" onclick="window.vsmAudio.testSound('ambient')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+                                <span>Эмбиент</span>
+                            </button>
+                            <button type="button" class="vsm-audio-pill-btn" onclick="window.vsmAudio.testSound('success')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+                                <span>Успех</span>
+                            </button>
+                            <button type="button" class="vsm-audio-pill-btn" onclick="window.vsmAudio.testSound('warning')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                <span>Таймер</span>
+                            </button>
+                            <button type="button" class="vsm-audio-pill-btn" onclick="window.vsmAudio.testSound('emergency')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18v-6a5 5 0 1 1 10 0v6"></path><path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z"></path><path d="M21 12h1"></path><path d="M18.5 4.5 18 5"></path><path d="M2 12h1"></path><path d="M12 2v1"></path><path d="m4.93 4.93.7.7"></path></svg>
+                                <span>Тревога</span>
+                            </button>
+                            <button type="button" class="vsm-audio-pill-btn" onclick="window.vsmAudio.testSound('door')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4h3a2 2 0 0 1 2 2v14"></path><path d="M2 20h20"></path><path d="M13 20V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v16"></path><circle cx="9" cy="12" r="1"></circle></svg>
+                                <span>Двери</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Секция 3: Синтез речи пассажиров (TTS) -->
+                <div class="vsm-audio-card">
+                    <div class="vsm-audio-card-head">
+                        <h4 class="vsm-audio-card-title" style="display: flex; align-items: center; gap: 0.45rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+                            <span>Голосовая озвучка речей пассажиров (TTS)</span>
+                        </h4>
+                        <label class="vsm-toggle-switch" title="Включить / отключить озвучку">
+                            <input type="checkbox" id="vsm-opt-tts-toggle" checked>
+                            <span class="vsm-toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="vsm-audio-row">
+                        <span class="vsm-audio-label">
+                            <span>Автоозвучка при открытии задачи</span>
+                            <span class="vsm-audio-sublabel">Воспроизводит реплики пассажиров в сценариях и карусели</span>
+                        </span>
+                    </div>
+
+                    <!-- Раздельный выбор голосов по типу субъекта -->
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.25rem;">
+                        
+                        <!-- 1. Мужской голос -->
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <label for="vsm-opt-tts-voice-male" class="vsm-audio-label" style="font-size: 0.78rem; font-weight: 700; color: #e2e8f0; display: flex; align-items: center; gap: 0.35rem;">
+                                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #38bdf8;"></span>
+                                    <span>Мужской голос (пассажиры-мужчины):</span>
+                                </label>
+                                <button type="button" class="vsm-audio-pill-btn" style="padding: 2px 8px; font-size: 0.7rem;" onclick="window.vsmAudio.testVoice('male')">
+                                    <span>Тест</span>
+                                </button>
+                            </div>
+                            <select id="vsm-opt-tts-voice-male" class="vsm-audio-select" onchange="window.vsmAudio.updateVoiceSelection('male', this.value)">
+                                <optgroup label="Нейросетевые ИИ-голоса ВСМ (Облачный синтез)">
+                                    <option value="ru-RU-DmitryNeural" selected>Дмитрий (Нейросеть ВСМ, Мужской) — ИИ по умолчанию</option>
+                                    <option value="en-US-GuyNeural">Guy (Neural EN, Male)</option>
+                                </optgroup>
+                                <optgroup label="Локальный синтез устройства (Web Speech API)">
+                                    <option value="local-male">Локальный системный голос (Мгновенно, РФ)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <!-- 2. Женский голос -->
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <label for="vsm-opt-tts-voice-female" class="vsm-audio-label" style="font-size: 0.78rem; font-weight: 700; color: #e2e8f0; display: flex; align-items: center; gap: 0.35rem;">
+                                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #f472b6;"></span>
+                                    <span>Женский голос (пассажирки, мамы с детьми):</span>
+                                </label>
+                                <button type="button" class="vsm-audio-pill-btn" style="padding: 2px 8px; font-size: 0.7rem;" onclick="window.vsmAudio.testVoice('female')">
+                                    <span>Тест</span>
+                                </button>
+                            </div>
+                            <select id="vsm-opt-tts-voice-female" class="vsm-audio-select" onchange="window.vsmAudio.updateVoiceSelection('female', this.value)">
+                                <optgroup label="Нейросетевые ИИ-голоса ВСМ (Облачный синтез)">
+                                    <option value="ru-RU-SvetlanaNeural" selected>Светлана (Нейросеть ВСМ, Женский) — ИИ по умолчанию</option>
+                                    <option value="en-US-JennyNeural">Jenny (Neural EN, Female)</option>
+                                </optgroup>
+                                <optgroup label="Локальный синтез устройства (Web Speech API)">
+                                    <option value="local-female">Локальный системный женский голос (Web Speech)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <!-- 3. Кабина машиниста -->
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <label for="vsm-opt-tts-voice-machinist" class="vsm-audio-label" style="font-size: 0.78rem; font-weight: 700; color: #e2e8f0; display: flex; align-items: center; gap: 0.35rem;">
+                                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #00d2ff;"></span>
+                                    <span>Кабина машиниста (Машинист, рация, диспетчер, ПЭМ):</span>
+                                </label>
+                                <button type="button" class="vsm-audio-pill-btn" style="padding: 2px 8px; font-size: 0.7rem;" onclick="window.vsmAudio.testVoice('machinist')">
+                                    <span>Тест</span>
+                                </button>
+                            </div>
+                            <select id="vsm-opt-tts-voice-machinist" class="vsm-audio-select" onchange="window.vsmAudio.updateVoiceSelection('machinist', this.value)">
+                                <optgroup label="Радиоэфир и интерком поезда ВСМ">
+                                    <option value="machinist-radio" selected>Кабина машиниста (Рация интеркома, Мужской) — ИИ по умолчанию</option>
+                                    <option value="ru-RU-DmitryNeural">Дмитрий (Штатный мужской тон)</option>
+                                </optgroup>
+                                <optgroup label="Локальный синтез устройства (Web Speech API)">
+                                    <option value="local-machinist">Локальный системный голос кабины</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <!-- 4. Голос бортового компьютера и приборов -->
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <label for="vsm-opt-tts-voice-system" class="vsm-audio-label" style="font-size: 0.78rem; font-weight: 700; color: #e2e8f0; display: flex; align-items: center; gap: 0.35rem;">
+                                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #c084fc;"></span>
+                                    <span>Бортовой компьютер и телеметрия (СКНБ, дефибриллятор, датчики, ЭВМ):</span>
+                                </label>
+                                <button type="button" class="vsm-audio-pill-btn" style="padding: 2px 8px; font-size: 0.7rem;" onclick="window.vsmAudio.testVoice('system')">
+                                    <span>Тест</span>
+                                </button>
+                            </div>
+                            <select id="vsm-opt-tts-voice-system" class="vsm-audio-select" onchange="window.vsmAudio.updateVoiceSelection('system', this.value)">
+                                <optgroup label="Кибер-синтез и автоматика ВСМ">
+                                    <option value="robot-telemetry" selected>Бортовой компьютер ВСМ (Роботизированный женский) — ИИ по умолчанию</option>
+                                    <option value="ru-RU-SvetlanaNeural">Светлана (Штатный женский тон)</option>
+                                </optgroup>
+                                <optgroup label="Локальный синтез устройства (Web Speech API)">
+                                    <option value="local-system">Роботизированный локальный синтезатор</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="vsm-audio-row" style="margin-top: 0.6rem;">
+                        <span class="vsm-audio-label">Громкость озвучки</span>
+                        <div class="vsm-audio-slider-wrap">
+                            <input type="range" id="vsm-opt-tts-vol" class="vsm-range-slider" min="0" max="100" value="90">
+                            <span id="vsm-val-tts-vol" class="vsm-range-val">90%</span>
+                        </div>
+                    </div>
+
+                    <div class="vsm-audio-row">
+                        <span class="vsm-audio-label">Скорость речи</span>
+                        <div class="vsm-audio-slider-wrap">
+                            <input type="range" id="vsm-opt-tts-rate" class="vsm-range-slider" min="0.7" max="1.5" step="0.1" value="1.0">
+                            <span id="vsm-val-tts-rate" class="vsm-range-val">1.0x</span>
+                        </div>
+                    </div>
+
+                    <div class="vsm-audio-row">
+                        <span class="vsm-audio-label">Высота тона</span>
+                        <div class="vsm-audio-slider-wrap">
+                            <input type="range" id="vsm-opt-tts-pitch" class="vsm-range-slider" min="0.7" max="1.3" step="0.1" value="1.0">
+                            <span id="vsm-val-tts-pitch" class="vsm-range-val">1.0</span>
+                        </div>
+                    </div>
+
+                    <!-- Фоновый воркер предзагрузки и статус кэша с защитой места -->
+                    <div style="margin-top: 0.9rem; background: rgba(0, 210, 255, 0.05); border: 1px solid rgba(0, 210, 255, 0.2); border-radius: 12px; padding: 0.85rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                            <span style="font-size: 0.74rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.04em; display: flex; align-items: center; gap: 0.35rem;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--vsm-cyan)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                <span>Фоновый кэш озвучек (Web Worker)</span>
+                            </span>
+                            <span id="vsm-tts-cache-pct" style="font-size: 0.75rem; color: var(--vsm-cyan); font-weight: 700;">100%</span>
+                        </div>
+                        <div style="width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; overflow: hidden; margin-bottom: 0.4rem;">
+                            <div id="vsm-tts-cache-bar" style="width: 100%; height: 100%; background: linear-gradient(90deg, var(--vsm-cyan), #3b82f6); transition: width 0.3s ease;"></div>
+                        </div>
+                        <div id="vsm-tts-cache-status-text" style="font-size: 0.72rem; color: #94a3b8; line-height: 1.4; margin-bottom: 0.5rem;">
+                            Кэш активен. Резерв свободного места в localStorage соблюден (>3 МБ свободно).
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button type="button" class="vsm-audio-pill-btn" style="flex: 1; justify-content: center; padding: 4px 8px; font-size: 0.72rem;" onclick="window.vsmAudio.preloadAllNow()">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                                <span>Предзагрузить всё</span>
+                            </button>
+                            <button type="button" class="vsm-audio-pill-btn" style="flex: 1; justify-content: center; padding: 4px 8px; font-size: 0.72rem; color: #f87171; border-color: rgba(248, 113, 113, 0.3);" onclick="window.vsmAudio.clearTTSCache()">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                <span>Очистить кэш</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vsm-audio-modal-footer">
+                <button type="button" class="vsm-btn vsm-btn-secondary" style="font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem;" onclick="window.vsmAudio.resetDefaults()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                    <span>По умолчанию</span>
+                </button>
+                <button type="button" class="vsm-btn vsm-btn-primary" style="font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem;" onclick="window.vsmAudio.closeSettingsModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>Сохранить настройки</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Универсальное стилизованное модальное окно подтверждений ВСМ -->
+    <div id="vsm-confirm-modal" class="vsm-confirm-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="vsm-confirm-title">
+        <div id="vsm-confirm-box" class="vsm-confirm-modal-box">
+            <div class="vsm-confirm-modal-header">
+                <div id="vsm-confirm-icon" class="vsm-confirm-icon-wrap">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--vsm-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                </div>
+                <h3 id="vsm-confirm-title" class="vsm-confirm-title">Подтверждение действия</h3>
+            </div>
+            <div id="vsm-confirm-message" class="vsm-confirm-modal-body">
+                Вы уверены, что хотите выполнить это действие?
+            </div>
+            <div class="vsm-confirm-modal-footer">
+                <button type="button" id="vsm-confirm-btn-cancel" class="vsm-btn vsm-btn-secondary" style="font-size: 0.85rem; padding: 0.55rem 1.15rem;">
+                    Отмена
+                </button>
+                <button type="button" id="vsm-confirm-btn-ok" class="vsm-btn vsm-btn-primary" style="font-size: 0.85rem; padding: 0.55rem 1.25rem;">
+                    Подтвердить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Интерактивные обработчики для панели Аудиостудии -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Mute switch
+            document.getElementById('vsm-opt-mute-toggle')?.addEventListener('change', (e) => {
+                window.vsmAudio.isMuted = !e.target.checked;
+                window.vsmAudio.updateMuteIcon();
+                if (!window.vsmAudio.isMuted) {
+                    window.vsmAudio.playClick();
+                    if (window.vsmAudio.settings.ambientEnabled) {
+                        window.vsmAudio.startAmbient();
+                    }
+                } else {
+                    window.vsmAudio.stopAmbient();
+                    window.vsmAudio.stopSpeech();
+                }
+            });
+
+            // Master volume slider
+            document.getElementById('vsm-opt-master-vol')?.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value, 10);
+                window.vsmAudio.settings.masterVolume = val / 100;
+                const txt = document.getElementById('vsm-val-master-vol');
+                if (txt) txt.textContent = `${val}%`;
+                window.vsmAudio.saveSettings();
+                window.vsmAudio.updateAmbientVolume();
+            });
+
+            // SFX volume slider
+            document.getElementById('vsm-opt-sfx-vol')?.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value, 10);
+                window.vsmAudio.settings.sfxVolume = val / 100;
+                const txt = document.getElementById('vsm-val-sfx-vol');
+                if (txt) txt.textContent = `${val}%`;
+                window.vsmAudio.saveSettings();
+            });
+
+            // SFX Toggles
+            document.getElementById('vsm-opt-chime-toggle')?.addEventListener('change', (e) => {
+                window.vsmAudio.settings.chimeEnabled = e.target.checked;
+                window.vsmAudio.saveSettings();
+                if (e.target.checked) window.vsmAudio.playTrainChime();
+            });
+
+            document.getElementById('vsm-opt-click-toggle')?.addEventListener('change', (e) => {
+                window.vsmAudio.settings.clickEnabled = e.target.checked;
+                window.vsmAudio.saveSettings();
+                if (e.target.checked) window.vsmAudio.playClick();
+            });
+
+            document.getElementById('vsm-opt-warning-toggle')?.addEventListener('change', (e) => {
+                window.vsmAudio.settings.warningEnabled = e.target.checked;
+                window.vsmAudio.saveSettings();
+                if (e.target.checked) window.vsmAudio.playWarning();
+            });
+
+            // Ambient
+            document.getElementById('vsm-opt-ambient-toggle')?.addEventListener('change', (e) => {
+                window.vsmAudio.settings.ambientEnabled = e.target.checked;
+                window.vsmAudio.saveSettings();
+                if (e.target.checked) {
+                    window.vsmAudio.startAmbient();
+                } else {
+                    window.vsmAudio.stopAmbient();
+                }
+            });
+
+            document.getElementById('vsm-opt-ambient-vol')?.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value, 10);
+                window.vsmAudio.settings.ambientVolume = val / 100;
+                const txt = document.getElementById('vsm-val-ambient-vol');
+                if (txt) txt.textContent = `${val}%`;
+                window.vsmAudio.saveSettings();
+                window.vsmAudio.updateAmbientVolume();
+            });
+
+            // TTS
+            document.getElementById('vsm-opt-tts-toggle')?.addEventListener('change', (e) => {
+                window.vsmAudio.settings.ttsEnabled = e.target.checked;
+                window.vsmAudio.saveSettings();
+                if (e.target.checked) {
+                    window.vsmAudio.speak("Синтез речи пассажиров включен");
+                } else {
+                    window.vsmAudio.stopSpeech();
+                }
+            });
+
+            document.getElementById('vsm-opt-tts-voice')?.addEventListener('change', (e) => {
+                window.vsmAudio.settings.ttsVoice = e.target.value;
+                window.vsmAudio.saveSettings();
+                window.vsmAudio.testTTS();
+            });
+
+            document.getElementById('vsm-opt-tts-vol')?.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value, 10);
+                window.vsmAudio.settings.ttsVolume = val / 100;
+                const txt = document.getElementById('vsm-val-tts-vol');
+                if (txt) txt.textContent = `${val}%`;
+                window.vsmAudio.saveSettings();
+            });
+
+            document.getElementById('vsm-opt-tts-rate')?.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                window.vsmAudio.settings.ttsRate = val;
+                const txt = document.getElementById('vsm-val-tts-rate');
+                if (txt) txt.textContent = `${val.toFixed(1)}x`;
+                window.vsmAudio.saveSettings();
+            });
+
+            document.getElementById('vsm-opt-tts-pitch')?.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                window.vsmAudio.settings.ttsPitch = val;
+                const txt = document.getElementById('vsm-val-tts-pitch');
+                if (txt) txt.textContent = `${val.toFixed(1)}`;
+                window.vsmAudio.saveSettings();
+            });
+
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+
+        // Универсальная стилизованная система модальных окон ВСМ (вместо браузерных alert/confirm)
+        window.vsmConfirm = function(options) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('vsm-confirm-modal');
+                if (!modal) {
+                    resolve(window.confirm(typeof options === 'string' ? options : options.message));
+                    return;
+                }
+
+                const boxEl = document.getElementById('vsm-confirm-box');
+                const titleEl = document.getElementById('vsm-confirm-title');
+                const msgEl = document.getElementById('vsm-confirm-message');
+                const iconEl = document.getElementById('vsm-confirm-icon');
+                const btnConfirm = document.getElementById('vsm-confirm-btn-ok');
+                const btnCancel = document.getElementById('vsm-confirm-btn-cancel');
+
+                const config = typeof options === 'string' ? { message: options } : (options || {});
+                const title = config.title || 'Подтверждение действия';
+                const message = config.message || '';
+                const confirmText = config.confirmText || 'Подтвердить';
+                const cancelText = config.cancelText || 'Отмена';
+                const isDanger = !!config.isDanger;
+
+                if (titleEl) titleEl.textContent = title;
+                if (msgEl) msgEl.innerHTML = message.replace(/\n/g, '<br>');
+
+                if (btnConfirm) {
+                    btnConfirm.textContent = confirmText;
+                    btnConfirm.className = isDanger ? 'vsm-btn vsm-btn-danger' : 'vsm-btn vsm-btn-primary';
+                }
+                if (btnCancel) {
+                    btnCancel.textContent = cancelText;
+                    btnCancel.style.display = cancelText ? 'inline-flex' : 'none';
+                }
+
+                if (boxEl) {
+                    if (isDanger) boxEl.classList.add('is-danger');
+                    else boxEl.classList.remove('is-danger');
+                }
+
+                if (iconEl) {
+                    iconEl.innerHTML = isDanger
+                        ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+                        : `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--vsm-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+                }
+
+                modal.style.display = 'flex';
+                if (window.vsmAudio) window.vsmAudio.playClick();
+
+                function cleanup(result) {
+                    modal.style.display = 'none';
+                    btnConfirm.onclick = null;
+                    btnCancel.onclick = null;
+                    document.removeEventListener('keydown', onKeyDown);
+                    modal.onclick = null;
+                    if (window.vsmAudio) window.vsmAudio.playClick();
+                    resolve(result);
+                }
+
+                btnConfirm.onclick = () => cleanup(true);
+                btnCancel.onclick = () => cleanup(false);
+                modal.onclick = (e) => {
+                    if (e.target === modal) cleanup(false);
+                };
+
+                function onKeyDown(e) {
+                    if (e.key === 'Escape') cleanup(false);
+                }
+                document.addEventListener('keydown', onKeyDown);
+            });
+        };
+
+        window.vsmAlert = function(message, title = 'Внимание') {
+            return window.vsmConfirm({
+                title: title,
+                message: message,
+                confirmText: 'Понятно',
+                cancelText: '',
+                isDanger: false
+            });
+        };
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((err) => {
+                    console.debug('[VSM PWA] SW registration notice:', err);
+                });
+            });
+        }
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

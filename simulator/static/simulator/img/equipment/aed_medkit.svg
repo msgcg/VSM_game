@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="mkCase" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="60%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <filter id="mkGlow">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#10b981" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Ручка чемодана -->
+  <path d="M46 30 L46 22 C46 18 74 18 74 22 L74 30" fill="none" stroke="#334155" stroke-width="4.5" stroke-linecap="round"/>
+
+  <!-- Основной корпус чемодана медпомощи -->
+  <rect x="22" y="30" width="76" height="68" rx="14" fill="url(#mkCase)" stroke="#34d399" stroke-width="2" filter="url(#mkGlow)"/>
+
+  <!-- Замки-защелки -->
+  <rect x="36" y="28" width="10" height="6" rx="2" fill="#cbd5e1" stroke="#475569" stroke-width="1"/>
+  <rect x="74" y="28" width="10" height="6" rx="2" fill="#cbd5e1" stroke="#475569" stroke-width="1"/>
+
+  <!-- Белый круг с символом АНД / Крестом -->
+  <circle cx="60" cy="62" r="22" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+  <!-- Сердце с молнией дефибриллятора (AED) -->
+  <path d="M60 74 C50 66 45 60 45 54 C45 49 49 46 54 46 C57 46 59 48 60 50 C61 48 63 46 66 46 C71 46 75 49 75 54 C75 60 70 66 60 74 Z" fill="#ef4444"/>
+  
+  <!-- Молния дефибриллятора золотая -->
+  <polygon points="62,49 56,58 60,58 57,67 65,56 61,56" fill="#facc15" stroke="#ca8a04" stroke-width="0.8"/>
+
+  <!-- Текст АНД / ПЕРВАЯ ПОМОЩЬ -->
+  <rect x="32" y="86" width="56" height="9" rx="3" fill="#047857"/>
+  <text x="60" y="93" fill="#ffffff" font-size="5.5" font-weight="900" font-family="Montserrat, sans-serif" text-anchor="middle" letter-spacing="1">АНД • АПТЕЧКА</text>
+</svg>

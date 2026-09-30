@@ -1,0 +1,223 @@
+{% extends 'simulator/base.html' %}
+{% load static %}
+
+{% block title %}Банк ситуационных задач | ВСМ «Белый кречет»{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+        <div>
+            <h1 style="font-size: 1.85rem; font-weight: 900; color: #ffffff; text-transform: uppercase;">
+                Банк ситуационных задач и сценариев ВСМ
+            </h1>
+            <p style="font-size: 0.9rem; color: #94a3b8; margin-top: 0.25rem;">
+                Отработка нештатных ситуаций на скорости до 400 км/ч: сюжетные ветвящиеся сценарии и скоростные экспресс-кейсы карусели.
+            </p>
+        </div>
+
+        <!-- Переключатель режима: Сценарии / Карусель / Все -->
+        <div style="display: flex; background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 4px; border: 1px solid rgba(255, 255, 255, 0.1); gap: 4px;">
+            <a href="?mode=all{% if category != 'all' %}&category={{ category }}{% endif %}{% if service_class != 'all' %}&service_class={{ service_class }}{% endif %}" class="vsm-btn {% if mode == 'all' %}vsm-btn-primary{% else %}vsm-btn-outline{% endif %}" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; border-radius: 8px;">
+                Все материалы
+            </a>
+            <a href="?mode=scenarios{% if category != 'all' %}&category={{ category }}{% endif %}{% if service_class != 'all' %}&service_class={{ service_class }}{% endif %}" class="vsm-btn {% if mode == 'scenarios' %}vsm-btn-primary{% else %}vsm-btn-outline{% endif %}" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; border-radius: 8px;">
+                Сценарии ({{ scenarios.count }})
+            </a>
+            <a href="?mode=carousel{% if category != 'all' %}&category={{ category }}{% endif %}{% if service_class != 'all' %}&service_class={{ service_class }}{% endif %}" class="vsm-btn {% if mode == 'carousel' %}vsm-btn-primary{% else %}vsm-btn-outline{% endif %}" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; border-radius: 8px;">
+                Кейсы карусели ({{ carousel_challenges.count }})
+            </a>
+        </div>
+    </div>
+
+    <!-- Фильтры классов обслуживания ВСМ -->
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; align-items: center;">
+        <span style="font-size: 0.78rem; font-weight: 700; color: #94a3b8; margin-right: 0.25rem;">Класс обслуживания:</span>
+        <a href="?service_class=all{% if category != 'all' %}&category={{ category }}{% endif %}{% if mode != 'all' %}&mode={{ mode }}{% endif %}" class="vsm-btn {% if service_class == 'all' %}vsm-btn-primary{% else %}vsm-btn-outline{% endif %}" style="padding: 0.35rem 0.8rem; font-size: 0.78rem;">
+            Все классы
+        </a>
+        <a href="?service_class=economy{% if category != 'all' %}&category={{ category }}{% endif %}{% if mode != 'all' %}&mode={{ mode }}{% endif %}" class="vsm-btn {% if service_class == 'economy' %}vsm-btn-primary{% else %}vsm-btn-outline{% endif %}" style="padding: 0.35rem 0.8rem; font-size: 0.78rem;">
+            <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+            <span>Эконом-класс</span>
+        </a>
+        <a href="?service_class=comfort{% if category != 'all' %}&category={{ category }}{% endif %}{% if mode != 'all' %}&mode={{ mode }}{% endif %}" class="vsm-btn {% if service_class == 'comfort' %}vsm-btn-primary{% else %}vsm-btn-outline{% endif %}" style="padding: 0.35rem 0.8rem; font-size: 0.78rem;">
+            <i data-lucide="smile" style="width: 14px; height: 14px;"></i>
+            <span>Комфорт-класс</span>
+        </a>
+        <a href="?service_class=business{% if category != 'all' %}&category={{ category }}{% endif %}{% if mode != 'all' %}&mode={{ mode }}{% endif %}" class="vsm-btn {% if service_class == 'business' %}vsm-btn-primary{% else %}vsm-btn-outline{% endif %}" style="padding: 0.35rem 0.8rem; font-size: 0.78rem;">
+            <i data-lucide="crown" style="width: 14px; height: 14px;"></i>
+            <span>Бизнес-класс</span>
+        </a>
+    </div>
+
+    <!-- Фильтры тематических категорий -->
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: center;">
+        <span style="font-size: 0.78rem; font-weight: 700; color: #94a3b8; margin-right: 0.25rem;">Тематика:</span>
+        <a href="?category=all{% if mode != 'all' %}&mode={{ mode }}{% endif %}{% if service_class != 'all' %}&service_class={{ service_class }}{% endif %}" class="vsm-btn {% if category == 'all' %}vsm-btn-primary{% else %}vsm-btn-outline{% endif %}" style="padding: 0.35rem 0.8rem; font-size: 0.78rem;">
+            Все категории
+        </a>
+        <a href="?category=conflict{% if mode != 'all' %}&mode={{ mode }}{% endif %}{% if service_class != 'all' %}&service_class={{ service_class }}{% endif %}" class="vsm-btn {% if category == 'conflict' %}vsm-btn-primary{% else %}vsm-btn-outline{% endif %}" style="padding: 0.35rem 0.8rem; font-size: 0.78rem;">
+            Конфликты
+        </a>
+        <a href="?category=medical{% if mode != 'all' %}&mode={{ mode }}{% endif %}{% if service_class != 'all' %}&service_class={{ service_class }}{% endif %}" class="vsm-btn {% if category == 'medical' %}vsm-btn-primary{% else %}vsm-btn-outline{% endif %}" style="padding: 0.35rem 0.8rem; font-size: 0.78rem;">
+            Медицина / ЧС
+        </a>
+        <a href="?category=safety{% if mode != 'all' %}&mode={{ mode }}{% endif %}{% if service_class != 'all' %}&service_class={{ service_class }}{% endif %}" class="vsm-btn {% if category == 'safety' %}vsm-btn-primary{% else %}vsm-btn-outline{% endif %}" style="padding: 0.35rem 0.8rem; font-size: 0.78rem;">
+            СПАС-ВО / Пожар
+        </a>
+        <a href="?category=anti_terror{% if mode != 'all' %}&mode={{ mode }}{% endif %}{% if service_class != 'all' %}&service_class={{ service_class }}{% endif %}" class="vsm-btn {% if category == 'anti_terror' %}vsm-btn-primary{% else %}vsm-btn-outline{% endif %}" style="padding: 0.35rem 0.8rem; font-size: 0.78rem;">
+            Антитеррор
+        </a>
+        <a href="?category=tech_failure{% if mode != 'all' %}&mode={{ mode }}{% endif %}{% if service_class != 'all' %}&service_class={{ service_class }}{% endif %}" class="vsm-btn {% if category == 'tech_failure' %}vsm-btn-primary{% else %}vsm-btn-outline{% endif %}" style="padding: 0.35rem 0.8rem; font-size: 0.78rem;">
+            Техника / Климат
+        </a>
+    </div>
+</div>
+
+{% if mode != 'carousel' %}
+<!-- РАЗДЕЛ 1: СЮЖЕТНЫЕ СЦЕНАРИИ -->
+<div style="margin-bottom: 2.5rem;">
+    <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.25rem;">
+        <i data-lucide="compass" style="width: 20px; height: 20px; color: var(--vsm-cyan);"></i>
+        <h2 style="font-size: 1.3rem; font-weight: 800; color: #fff;">Сюжетные ветвящиеся сценарии</h2>
+        <span style="font-size: 0.8rem; color: #94a3b8;">({{ scenarios.count }})</span>
+    </div>
+
+    <div class="vsm-scenarios-grid">
+        {% for sc in scenarios %}
+        <div class="vsm-scenario-card">
+            <div class="vsm-scenario-thumb">
+                <img src="{% static 'simulator/img/' %}{{ sc.background_image }}" alt="{{ sc.title }}" class="vsm-scenario-img">
+                <div class="vsm-scenario-overlay"></div>
+                
+                <div class="vsm-scenario-speed-badge">
+                    <i data-lucide="gauge" style="width: 12px; height: 12px;"></i>
+                    <span>{{ sc.train_speed }} км/ч</span>
+                </div>
+
+                <div class="vsm-scenario-diff-badge diff-{{ sc.difficulty }}">
+                    {{ sc.get_difficulty_display }}
+                </div>
+            </div>
+
+            <div class="vsm-scenario-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; gap: 0.5rem; flex-wrap: wrap;">
+                    <div class="vsm-scenario-category">{{ sc.get_category_display }}</div>
+                    {% with badge=sc.get_service_class_badge %}
+                    <span class="vsm-service-pill {{ badge.css_class }}">
+                        <i data-lucide="{{ badge.icon }}" style="width: 12px; height: 12px;"></i>
+                        <span>{{ badge.label }}</span>
+                    </span>
+                    {% endwith %}
+                </div>
+                <h3 class="vsm-scenario-title">{{ sc.title }}</h3>
+                <p class="vsm-scenario-desc">{{ sc.description }}</p>
+
+                <div class="vsm-scenario-meta">
+                    <div class="vsm-scenario-meta-item">
+                        <i data-lucide="map-pin" style="width: 14px; height: 14px; color: var(--vsm-cyan);"></i>
+                        <span>{{ sc.location_name|truncatechars:26 }}</span>
+                    </div>
+                    <div class="vsm-scenario-meta-item">
+                        <i data-lucide="clock" style="width: 14px; height: 14px; color: #38bdf8;"></i>
+                        <span>{{ sc.time_limit_default }} сек/ход</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.75rem;">
+                    <a href="{% url 'simulator:scenario_detail' slug=sc.slug %}" class="vsm-btn vsm-btn-outline" style="flex: 1; font-size: 0.82rem; padding: 0.65rem;">
+                        <span>Инструктаж</span>
+                    </a>
+                    <a href="{% url 'simulator:start_simulation' slug=sc.slug %}" class="vsm-btn vsm-btn-primary" style="flex: 1.3; font-size: 0.82rem; padding: 0.65rem;">
+                        <i data-lucide="play" style="width: 14px; height: 14px;"></i>
+                        <span>В рейс</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div style="grid-column: 1 / -1; text-align: center; padding: 2rem 1rem;">
+            <p style="font-size: 0.9rem; color: #94a3b8;">В данной категории сценариев не найдено.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if mode != 'scenarios' %}
+<!-- РАЗДЕЛ 2: ЭКСПРЕСС-КЕЙСЫ СКОРОСТНОЙ КАРУСЕЛИ -->
+<div style="margin-bottom: 2.5rem;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <i data-lucide="zap" style="width: 20px; height: 20px; color: #facc15;"></i>
+            <h2 style="font-size: 1.3rem; font-weight: 800; color: #fff;">Экспресс-кейсы карусели решений</h2>
+            <span style="font-size: 0.8rem; color: #94a3b8;">({{ carousel_challenges.count }})</span>
+        </div>
+        <a href="{% url 'simulator:endless_carousel' %}" class="vsm-btn vsm-btn-outline" style="padding: 0.45rem 1rem; font-size: 0.8rem;">
+            <i data-lucide="play" style="width: 14px; height: 14px;"></i>
+            <span>Запустить полную карусель смены</span>
+        </a>
+    </div>
+
+    <div class="vsm-scenarios-grid">
+        {% for c in carousel_challenges %}
+        <div class="vsm-scenario-card" style="border: 1px solid rgba(0, 210, 255, 0.15);">
+            <div class="vsm-scenario-thumb" style="height: 120px;">
+                <img src="{% static 'simulator/img/' %}{{ c.get_cover_image }}" alt="{{ c.title }}" class="vsm-scenario-img">
+                <div class="vsm-scenario-overlay"></div>
+                
+                <div class="vsm-scenario-speed-badge">
+                    <i data-lucide="gauge" style="width: 12px; height: 12px;"></i>
+                    <span>{{ c.train_speed }} км/ч</span>
+                </div>
+
+                <div class="vsm-scenario-diff-badge diff-{% if c.difficulty_level <= 1 %}easy{% elif c.difficulty_level == 2 %}medium{% elif c.difficulty_level <= 4 %}hard{% else %}expert{% endif %}">
+                    Уровень {{ c.difficulty_level }}
+                </div>
+            </div>
+
+            <div class="vsm-scenario-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; gap: 0.35rem; flex-wrap: wrap;">
+                    <div class="vsm-scenario-category">{{ c.get_category_display }}</div>
+                    <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                        {% with badge=c.get_service_class_badge %}
+                        <span class="vsm-service-pill {{ badge.css_class }}" style="font-size: 0.65rem; padding: 0.12rem 0.45rem;">
+                            <i data-lucide="{{ badge.icon }}" style="width: 11px; height: 11px;"></i>
+                            <span>{{ badge.label }}</span>
+                        </span>
+                        {% endwith %}
+                        {% if c.source_type == 'scenario' %}
+                        <span style="font-size: 0.65rem; color: var(--vsm-cyan); background: rgba(0, 210, 255, 0.12); padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 700; border: 1px solid rgba(0, 210, 255, 0.3);">Из сценария</span>
+                        {% else %}
+                        <span style="font-size: 0.65rem; color: #facc15; background: rgba(250, 204, 21, 0.12); padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 700; border: 1px solid rgba(250, 204, 21, 0.3);">Экспресс</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <h3 class="vsm-scenario-title" style="font-size: 0.95rem;">{{ c.title }}</h3>
+                <p class="vsm-scenario-desc" style="-webkit-line-clamp: 2;">{{ c.situation_text }}</p>
+
+                <div class="vsm-scenario-meta">
+                    <div class="vsm-scenario-meta-item">
+                        <i data-lucide="armchair" style="width: 14px; height: 14px; color: var(--vsm-cyan);"></i>
+                        <span>{{ c.car_info }}</span>
+                    </div>
+                    <div class="vsm-scenario-meta-item">
+                        <i data-lucide="timer" style="width: 14px; height: 14px; color: #ff6b8b;"></i>
+                        <span>{{ c.timer_seconds }} сек</span>
+                    </div>
+                </div>
+
+                <a href="{% url 'simulator:endless_carousel' %}?challenge_id={{ c.id }}" class="vsm-btn vsm-btn-primary" style="width: 100%; padding: 0.6rem 1rem;">
+                    <i data-lucide="zap" style="width: 15px; height: 15px;"></i>
+                    <span>Решить в карусели</span>
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div style="grid-column: 1 / -1; text-align: center; padding: 2rem 1rem;">
+            <p style="font-size: 0.9rem; color: #94a3b8;">В данной категории экспресс-кейсов не найдено.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

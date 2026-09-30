@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <defs>
+    <linearGradient id="pbg_mach" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#021f59"/>
+      <stop offset="100%" stop-color="#0b172a"/>
+    </linearGradient>
+    <linearGradient id="p_skin_mach" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fed7aa"/>
+      <stop offset="100%" stop-color="#fba76a"/>
+    </linearGradient>
+    <linearGradient id="p_uniform_mach" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="gold_badge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="100%" stop-color="#ca8a04"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle with high-tech cyan/blue border -->
+  <circle cx="80" cy="80" r="76" fill="url(#pbg_mach)" stroke="#00d2ff" stroke-width="2.5"/>
+
+  <!-- Radar / Cockpit HUD subtle background ring -->
+  <circle cx="80" cy="80" r="64" fill="none" stroke="rgba(0, 210, 255, 0.2)" stroke-width="1" stroke-dasharray="6,4"/>
+
+  <!-- Shoulders & Locomotive Driver Uniform Jacket -->
+  <path d="M28 156 Q40 106 80 106 Q120 106 132 156 Z" fill="url(#p_uniform_mach)"/>
+
+  <!-- Epaulettes / Shoulder Straps with Gold Stripes -->
+  <polygon points="34,124 48,110 56,114 42,128" fill="#091428" stroke="#ca8a04" stroke-width="1"/>
+  <line x1="38" y1="122" x2="52" y2="112" stroke="#fde047" stroke-width="1.5"/>
+  <polygon points="126,124 112,110 104,114 118,128" fill="#091428" stroke="#ca8a04" stroke-width="1"/>
+  <line x1="122" y1="122" x2="108" y2="112" stroke="#fde047" stroke-width="1.5"/>
+
+  <!-- White Shirt & Dark Blue Tie -->
+  <polygon points="68,106 80,120 92,106 88,102 80,106 72,102" fill="#ffffff"/>
+  <polygon points="76,115 84,115 86,145 80,154 74,145" fill="#0284c7"/>
+  <polygon points="76,113 84,113 82,119 78,119" fill="#0369a1"/>
+
+  <!-- Uniform Lapels -->
+  <polygon points="44,128 66,106 74,130 52,156" fill="#1e293b"/>
+  <polygon points="116,128 94,106 86,130 108,156" fill="#0f172a"/>
+
+  <!-- Neck -->
+  <rect x="71" y="82" width="18" height="26" rx="3" fill="#fba76a"/>
+
+  <!-- Head / Face -->
+  <ellipse cx="80" cy="64" rx="25" ry="28" fill="url(#p_skin_mach)"/>
+
+  <!-- Ears -->
+  <ellipse cx="54" cy="65" rx="4" ry="7" fill="#fba76a"/>
+  <ellipse cx="106" cy="65" rx="4" ry="7" fill="#fba76a"/>
+
+  <!-- Hair under Cap -->
+  <path d="M54 58 Q52 70 56 74 Q58 64 57 58 Z" fill="#1e293b"/>
+  <path d="M106 58 Q108 70 104 74 Q102 64 103 58 Z" fill="#1e293b"/>
+
+  <!-- Eyebrows (Focused & Calm) -->
+  <path d="M62 55 Q70 51 77 54" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <path d="M83 54 Q90 51 98 55" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Eyes -->
+  <ellipse cx="69" cy="60" rx="3.8" ry="2.6" fill="#0f172a"/>
+  <circle cx="70.5" cy="59" r="1.2" fill="#ffffff"/>
+  <ellipse cx="91" cy="60" rx="3.8" ry="2.6" fill="#0f172a"/>
+  <circle cx="92.5" cy="59" r="1.2" fill="#ffffff"/>
+
+  <!-- Nose -->
+  <path d="M78 61 L80 69 L83 69" stroke="#ea580c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Mouth (Determined) -->
+  <path d="M73 76 Q80 77 87 76" stroke="#c2410c" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+  <!-- Train Driver Visor Cap (Фуражка машиниста скоростного поезда) -->
+  <path d="M48 44 Q80 20 112 44 L108 50 Q80 32 52 50 Z" fill="#091428"/>
+  <rect x="52" y="44" width="56" height="6" rx="2" fill="#0f172a"/>
+  <path d="M44 48 Q80 36 116 48 Q102 54 80 54 Q58 54 44 48 Z" fill="#020617"/>
+  <path d="M46 48 Q80 38 114 48" stroke="#ca8a04" stroke-width="2" fill="none"/>
+  <!-- Gold Cockade / Emblem on Cap -->
+  <circle cx="80" cy="41" r="5" fill="url(#gold_badge)"/>
+  <polygon points="80,38 82,44 78,44" fill="#091428"/>
+  <path d="M74 41 Q80 43 86 41" stroke="#fde047" stroke-width="1.2" fill="none"/>
+
+  <!-- Intercom Radio Headset (Рация кабины с микрофоном) -->
+  <path d="M51 64 Q50 36 80 34 Q110 36 109 64" fill="none" stroke="#334155" stroke-width="3" stroke-linecap="round"/>
+  <!-- Ear Cushion left & right -->
+  <rect x="49" y="58" width="6" height="14" rx="3" fill="#0284c7" stroke="#00d2ff" stroke-width="1"/>
+  <rect x="105" y="58" width="6" height="14" rx="3" fill="#0284c7" stroke="#00d2ff" stroke-width="1"/>
+  <!-- Microphone boom arm reaching to mouth -->
+  <path d="M52 68 Q54 82 72 82 L76 81" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="77" cy="80.5" r="3.2" fill="#00d2ff"/>
+  <circle cx="77" cy="80.5" r="1.5" fill="#ffffff"/>
+
+  <!-- LED Transmit Indicator (Green active status) -->
+  <circle cx="108" cy="60" r="1.8" fill="#22c55e"/>
+</svg>

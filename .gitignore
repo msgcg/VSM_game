@@ -1,0 +1,48 @@
+# Python / Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.so
+
+# Django / SQLite
+*.log
+local_settings.py
+db.sqlite3
+*.sqlite3
+!db.sqlite3.clean
+db.sqlite3-journal
+db.sqlite3-wal
+db.sqlite3-shm
+media/
+staticfiles/
+
+# VS Code (keep launch.json for team debug setup, ignore user-specific settings)
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+
+# OS artifacts
+Thumbs.db
+Desktop.ini
+.DS_Store
+Tasks_and_sources/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
+
+
+# Offline ML models & Whisper Vulkan
+models/
+simulator/bin/whisper_vulkan/models/
+simulator/bin/whisper_vulkan/tmp/
+*.bin
+simulator/static/simulator/audio/tts_cache/

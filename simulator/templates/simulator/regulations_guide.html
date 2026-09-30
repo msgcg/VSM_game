@@ -1,0 +1,815 @@
+{% extends 'simulator/base.html' %}
+{% load static %}
+
+{% block title %}Стандарты и база знаний ВСМ-1 | Справочник проводника «Белый кречет»{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Стили базы знаний и библиотеки регламентов */
+.vsm-reg-search-box {
+    background: rgba(13, 22, 41, 0.9);
+    border: 2px solid rgba(0, 210, 255, 0.35);
+    border-radius: 16px;
+    padding: 1.25rem 1.75rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.vsm-search-input-wrap {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 0.6rem 1rem;
+    gap: 0.75rem;
+    transition: all 0.25s ease;
+}
+
+.vsm-search-input-wrap:focus-within {
+    border-color: var(--vsm-cyan);
+    box-shadow: 0 0 15px rgba(0, 210, 255, 0.25);
+    background: rgba(8, 42, 153, 0.25);
+}
+
+.vsm-search-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #ffffff;
+    font-size: 1rem;
+    width: 100%;
+    font-family: inherit;
+}
+
+.vsm-filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.vsm-filter-pill {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.vsm-filter-pill:hover,
+.vsm-filter-pill.active {
+    background: var(--vsm-primary);
+    border-color: var(--vsm-cyan);
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(0, 210, 255, 0.3);
+}
+
+/* Карточки шпаргалки */
+.vsm-cheat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+}
+
+.vsm-cheat-card {
+    background: linear-gradient(135deg, rgba(13, 22, 41, 0.8) 0%, rgba(8, 42, 153, 0.15) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 4px solid var(--vsm-cyan);
+    border-radius: 14px;
+    padding: 1.25rem;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.vsm-cheat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    border-color: rgba(0, 210, 255, 0.3);
+}
+
+/* Библиотека документов */
+.vsm-docs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.vsm-doc-card {
+    background: #0d1629;
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.vsm-doc-card:hover {
+    border-color: var(--vsm-cyan);
+    transform: translateY(-4px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7), 0 0 25px rgba(0, 210, 255, 0.2);
+}
+
+.vsm-doc-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--doc-color, var(--vsm-cyan));
+}
+
+/* Модальное окно читалки */
+.vsm-reader-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(3, 7, 18, 0.92);
+    backdrop-filter: blur(12px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.vsm-reader-box {
+    background: #0d1629;
+    border: 2px solid rgba(0, 210, 255, 0.4);
+    border-radius: 16px;
+    max-width: 1440px;
+    width: 96vw;
+    height: 92vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95), 0 0 35px rgba(0, 210, 255, 0.25);
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.vsm-mode-btn {
+    background: transparent;
+    color: #94a3b8;
+    transition: all 0.2s ease;
+}
+
+.vsm-mode-btn.active {
+    background: var(--vsm-primary);
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
+}
+
+.vsm-reader-header {
+    padding: 1.25rem 1.75rem;
+    background: rgba(8, 42, 153, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.vsm-reader-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.75rem 2rem;
+    color: #e2e8f0;
+    font-size: 0.96rem;
+    line-height: 1.75;
+    font-family: inherit;
+}
+
+.vsm-reader-body h1 {
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 0.4rem;
+    line-height: 1.3;
+}
+
+.vsm-reader-body .vsm-reader-subtitle {
+    font-size: 0.95rem;
+    color: #94a3b8;
+    font-style: italic;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 0.75rem;
+}
+
+.vsm-reader-body h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--vsm-cyan);
+    margin-top: 1.5rem;
+    margin-bottom: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.vsm-reader-body h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-top: 1.35rem;
+    margin-bottom: 0.6rem;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    border-left: 3px solid var(--vsm-cyan);
+}
+
+.vsm-reader-body p {
+    margin-bottom: 1rem;
+    color: #cbd5e1;
+    text-align: justify;
+    line-height: 1.75;
+}
+
+.vsm-reader-body ul, .vsm-reader-body ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1.2rem;
+    color: #e2e8f0;
+}
+
+.vsm-reader-body li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+.vsm-reader-body .vsm-reader-alert {
+    background: rgba(253, 3, 58, 0.12);
+    border-left: 4px solid var(--vsm-accent-red);
+    border-radius: 0 10px 10px 0;
+    padding: 0.9rem 1.2rem;
+    margin: 1.2rem 0;
+    color: #fca5a5;
+    font-size: 0.92rem;
+    line-height: 1.6;
+}
+
+.vsm-reader-body .vsm-reader-callout {
+    background: rgba(0, 210, 255, 0.08);
+    border-left: 4px solid var(--vsm-cyan);
+    border-radius: 0 10px 10px 0;
+    padding: 0.9rem 1.2rem;
+    margin: 1.2rem 0;
+    color: #bae6fd;
+    font-size: 0.92rem;
+    line-height: 1.6;
+}
+
+.vsm-reader-body hr {
+    border: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    margin: 1.5rem 0;
+}
+
+.vsm-reader-chapters {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.75rem 1.75rem;
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+}
+
+.vsm-chapter-tab {
+    padding: 0.35rem 0.8rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    font-size: 0.78rem;
+    color: #cbd5e1;
+    cursor: pointer;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.vsm-chapter-tab:hover,
+.vsm-chapter-tab.active {
+    background: var(--vsm-primary);
+    color: #ffffff;
+    border-color: var(--vsm-cyan);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1250px; margin: 0 auto; padding-bottom: 3rem;">
+
+    <!-- Заголовок раздела -->
+    <div style="margin-bottom: 2rem;">
+        <div class="vsm-hero-badge">
+            <i data-lucide="book-open-check" style="width: 14px; height: 14px;"></i>
+            <span>ЕДИНАЯ НОРМАТИВНАЯ БАЗА ВСМ-1 «МОСКВА — САНКТ-ПЕТЕРБУРГ»</span>
+        </div>
+        <h1 style="font-size: 2.2rem; font-weight: 900; color: #ffffff; text-transform: uppercase; margin-top: 0.35rem;">
+            Нормативные регламенты и официальная библиотека проводника
+        </h1>
+        <p style="font-size: 0.95rem; color: #94a3b8; margin-top: 0.35rem;">
+            Официальные первоисточники: отраслевой учебник проводника, квалификационные экзаменационные билеты 4-го разряда, ПТЭ, инструкции СПАС-ВО и стандарты обслуживания «Белый кречет».
+        </p>
+    </div>
+
+    <!-- ПОИСКОВАЯ СТРОКА И ФИЛЬТРЫ -->
+    <div class="vsm-reg-search-box">
+        <div class="vsm-search-input-wrap">
+            <i data-lucide="search" style="width: 20px; height: 20px; color: var(--vsm-cyan);"></i>
+            <input 
+                type="text" 
+                id="reg-search-input" 
+                class="vsm-search-input" 
+                placeholder="Быстрый поиск по базе знаний (ПТЭ, СПАС-ВО, овербукинг, СКНБ, опечатка, багаж, АНД, животные)..."
+                oninput="handleRegulationSearch(this.value)"
+            >
+            <button id="clear-search-btn" onclick="clearRegulationSearch()" style="background: none; border: none; color: #94a3b8; cursor: pointer; display: none;">
+                <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+            </button>
+        </div>
+
+        <div class="vsm-filter-pills">
+            <span class="vsm-filter-pill active" onclick="filterCategory('all', this)">Все разделы</span>
+            <span class="vsm-filter-pill" onclick="filterCategory('tickets', this)">Билеты и посадка</span>
+            <span class="vsm-filter-pill" onclick="filterCategory('overbooking', this)">Овербукинг и места</span>
+            <span class="vsm-filter-pill" onclick="filterCategory('speed', this)">Безопасность 400 км/ч</span>
+            <span class="vsm-filter-pill" onclick="filterCategory('medical', this)">Медицина и АНД</span>
+            <span class="vsm-filter-pill" onclick="filterCategory('fire', this)">СПАС-ВО и пожары</span>
+            <span class="vsm-filter-pill" onclick="filterCategory('tech', this)">Техника и СКНБ</span>
+            <span class="vsm-filter-pill" onclick="filterCategory('luggage', this)">Багаж и находки</span>
+        </div>
+    </div>
+
+    <!-- РАЗДЕЛ 1: ЭКСПРЕСС-ШПАРГАЛКА ПРОВОДНИКА -->
+    <div style="margin-bottom: 2.5rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+            <div>
+                <h2 style="font-size: 1.35rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="zap" style="width: 20px; height: 20px; color: #facc15;"></i>
+                    <span>Экспресс-шпаргалка проводника (Золотые правила рейса)</span>
+                </h2>
+                <p style="font-size: 0.82rem; color: #94a3b8;">Главные нормативные алгоритмы для моментального принятия решений в сценариях и карусели</p>
+            </div>
+        </div>
+
+        <div class="vsm-cheat-grid">
+            {% for sheet in cheat_sheets %}
+            <div class="vsm-cheat-card" style="border-left-color: {{ sheet.color }};" data-searchable="{{ sheet.category }} {{ sheet.rule }} {{ sheet.reference }} {{ sheet.summary }}">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem;">
+                    <span style="font-size: 0.72rem; font-weight: 800; color: {{ sheet.color }}; text-transform: uppercase; letter-spacing: 0.05em;">
+                        {{ sheet.category }}
+                    </span>
+                    <span style="font-size: 0.72rem; color: #cbd5e1; background: rgba(255, 255, 255, 0.08); padding: 0.15rem 0.5rem; border-radius: 4px;">
+                        {{ sheet.reference }}
+                    </span>
+                </div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: #ffffff; margin-bottom: 0.4rem;">
+                    {{ sheet.rule }}
+                </h3>
+                <p style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">
+                    {{ sheet.summary }}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- РАЗДЕЛ 2: ОФИЦИАЛЬНАЯ БИБЛИОТЕКА ПЕРВОИСТОЧНИКОВ -->
+    <div style="margin-bottom: 3rem;">
+        <div style="margin-bottom: 1.25rem;">
+            <h2 style="font-size: 1.35rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 0.5rem;">
+                <i data-lucide="library" style="width: 20px; height: 20px; color: var(--vsm-cyan);"></i>
+                <span>Официальная библиотека первоисточников и документов</span>
+            </h2>
+            <p style="font-size: 0.82rem; color: #94a3b8;">
+                Подлинные нормативные документы с возможностью мгновенного скачивания или чтения в интерактивном вьюере
+            </p>
+        </div>
+
+        <div class="vsm-docs-grid">
+            {% for key, doc in documents_catalog.items %}
+            <div class="vsm-doc-card" style="--doc-color: {{ doc.badge_color }};" data-searchable="{{ doc.title }} {{ doc.subtitle }} {{ doc.description }}">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <span style="background: rgba(255, 255, 255, 0.08); color: {{ doc.badge_color }}; border: 1px solid {{ doc.badge_color }}; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 6px; text-transform: uppercase;">
+                            {{ doc.badge }}
+                        </span>
+                        <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">
+                            {{ doc.format }} • {{ doc.size }}
+                        </span>
+                    </div>
+
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin-bottom: 0.35rem; line-height: 1.35;">
+                        {{ doc.title }}
+                    </h3>
+                    <div style="font-size: 0.78rem; color: var(--vsm-cyan); font-weight: 600; margin-bottom: 0.75rem;">
+                        {{ doc.subtitle }}
+                    </div>
+                    <p style="font-size: 0.84rem; color: #94a3b8; line-height: 1.5; margin-bottom: 1rem;">
+                        {{ doc.description }}
+                    </p>
+
+                    <div style="font-size: 0.75rem; color: #cbd5e1; margin-bottom: 1.25rem;">
+                        <i data-lucide="layers" style="width: 14px; height: 14px; display: inline; vertical-align: middle; color: var(--vsm-cyan);"></i>
+                        <span>Глав / разделов: {{ doc.sections_count }}</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                    <button onclick="openDocumentReader('{{ doc.key }}')" class="vsm-btn vsm-btn-primary" style="flex: 1; padding: 0.6rem 0.8rem; font-size: 0.82rem;">
+                        <i data-lucide="book-open" style="width: 15px; height: 15px;"></i>
+                        <span>Подробнее</span>
+                    </button>
+                    <a href="{% url 'simulator:view_pdf_document' doc_key=doc.key %}" target="_blank" class="vsm-btn vsm-btn-outline" style="padding: 0.6rem 0.75rem; font-size: 0.82rem;" title="Открыть PDF в новой вкладке">
+                        <i data-lucide="external-link" style="width: 15px; height: 15px;"></i>
+                    </a>
+                    <a href="{% url 'simulator:download_document' doc_key=doc.key %}" class="vsm-btn vsm-btn-outline" style="padding: 0.6rem 0.75rem; font-size: 0.82rem;" title="Скачать PDF {{ doc.filename }}">
+                        <i data-lucide="download" style="width: 15px; height: 15px;"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- РАЗДЕЛ 3: ПОДРОБНЫЕ ОПЕРАТИВНЫЕ РЕГЛАМЕНТЫ ВСМ -->
+    <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="file-text" style="width: 20px; height: 20px; color: var(--vsm-cyan);"></i>
+            <span>Подробные оперативные регламенты по ситуациям</span>
+        </h2>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- 1. Экстренное торможение и стоп-кран на 400 км/ч -->
+        <div class="vsm-card reg-article" data-category="speed" data-searchable="стоп-кран экстренное торможение тоннель мост перегон 400 км/ч птэ">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(253, 3, 58, 0.2); border: 1px solid var(--vsm-accent-red); display: flex; align-items: center; justify-content: center; color: var(--vsm-accent-red); flex-shrink: 0;">
+                    <i data-lucide="alert-triangle" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div>
+                    <h2 style="font-size: 1.2rem; font-weight: 800; color: #ffffff;">1. Применение стоп-крана и экстренное торможение на 400 км/ч</h2>
+                    <div style="font-size: 0.78rem; color: #f87171; font-weight: 700;">ПТЭ ЖЕЛЕЗНЫХ ДОРОГ РФ • КРИТИЧЕСКИЙ РЕГЛАМЕНТ ВСМ</div>
+                </div>
+            </div>
+
+            <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.7;">
+                <p style="margin-bottom: 0.8rem;">
+                    На скорости 400 км/ч тормозной путь экспресса «Белый кречет» составляет до 3 800 метров. Срыв стоп-крана вызывает резкие перегрузки, падение багажа и травмирование непристегнутых пассажиров.
+                </p>
+                <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid var(--vsm-danger); padding: 0.9rem 1.2rem; border-radius: 0 8px 8px 0; margin-bottom: 0.8rem;">
+                    <strong style="color: #fca5a5;">КАТЕГОРИЧЕСКИ ЗАПРЕЩАЕТСЯ срывать стоп-кран:</strong>
+                    <ul style="margin-left: 1.25rem; margin-top: 0.35rem; list-style-type: disc;">
+                        <li>При нахождении поезда на железнодорожных мостах, эстакадах, путепроводах и в тоннелях;</li>
+                        <li>При возникновении пожара или задымления в вагоне (состав обязан покинуть тоннель/мост и следовать до станции или площадки с подъездом пожарных расчетов);</li>
+                        <li>При внезапных медицинских инцидентах и приступах у пассажиров (поезд должен на максимальной скорости доехать до ближайшей станции ВСМ с подготовленной бригадой СМП).</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Овербукинг и претензии по местам -->
+        <div class="vsm-card reg-article" data-category="overbooking" data-searchable="овербукинг двойная продажа пункт 23 правила перевозок бесплатный апгрейд бизнес-класс">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; display: flex; align-items: center; justify-content: center; color: #f59e0b; flex-shrink: 0;">
+                    <i data-lucide="crown" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div>
+                    <h2 style="font-size: 1.2rem; font-weight: 800; color: #ffffff;">2. Разрешение ситуаций с двойной продажей мест (Овербукинг)</h2>
+                    <div style="font-size: 0.78rem; color: #fbbf24; font-weight: 700;">ПРАВИЛА ПЕРЕВОЗОК ПАССАЖИРОВ, ПУНКТ 23</div>
+                </div>
+            </div>
+
+            <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.7;">
+                <p style="margin-bottom: 0.8rem;">
+                    При техническом сбое АСУ «Экспресс» или изменении схемы состава может возникнуть накладка: на одно кресло претендуют два законных пассажира с билетами.
+                </p>
+                <div style="background: rgba(245, 158, 11, 0.08); border-left: 4px solid #f59e0b; padding: 0.9rem 1.2rem; border-radius: 0 8px 8px 0;">
+                    <strong style="color: #fde68a;">Четкий порядок действий проводника:</strong>
+                    <ol style="margin-left: 1.25rem; margin-top: 0.35rem; list-style-type: decimal;">
+                        <li>Немедленно прекратить публичный спор между пассажирами, принести извинения от лица перевозчика;</li>
+                        <li>Проверить посадочные купоны в УКЭБ: пассажир, занявший место первым, остается на месте;</li>
+                        <li>Второму пассажиру в соответствии с <strong>п. 23 Правил перевозок</strong> предоставить место в вагоне более высокого класса (Бизнес или Первый) БЕЗ ВЗИМАНИЯ ДОПЛАТЫ;</li>
+                        <li>Начальник поезда оформляет посадочный акт в пути следования.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Опечатки в билетах -->
+        <div class="vsm-card reg-article" data-category="tickets" data-searchable="опечатка паспорт фамилия телеграмма 852 пункт 14 билеты посадка">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(0, 210, 255, 0.15); border: 1px solid var(--vsm-cyan); display: flex; align-items: center; justify-content: center; color: var(--vsm-cyan); flex-shrink: 0;">
+                    <i data-lucide="file-check-2" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div>
+                    <h2 style="font-size: 1.2rem; font-weight: 800; color: #ffffff;">3. Ошибки и опечатки в проездных документах</h2>
+                    <div style="font-size: 0.78rem; color: var(--vsm-cyan); font-weight: 700;">ОТРАСЛЕВОЕ РАСПОРЯЖЕНИЕ № 852 • ПРАВИЛА ПЕРЕВОЗОК П. 14</div>
+                </div>
+            </div>
+
+            <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.7;">
+                <p style="margin-bottom: 0.8rem;">
+                    Частая ситуация при быстрой покупке онлайн — опечатка в написании фамилии, имени, отчества или цифры паспорта.
+                </p>
+                <div style="background: rgba(0, 210, 255, 0.08); border-left: 4px solid var(--vsm-cyan); padding: 0.9rem 1.2rem; border-radius: 0 8px 8px 0;">
+                    <strong style="color: #a5f3fc;">Допустимые расхождения:</strong>
+                    <ul style="margin-left: 1.25rem; margin-top: 0.35rem; list-style-type: disc;">
+                        <li>Допускается расхождение <strong>не более одной буквы</strong> в фамилии или инициалах;</li>
+                        <li>Допускается расхождение <strong>не более одной цифры</strong> в номере документа, удостоверяющего личность;</li>
+                        <li>Пассажир ДОПУСКАЕТСЯ к поездке. Проводник информирует начальника поезда, который составляет служебный акт формы ЛУ без взимания сборов.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Нагрев букс и тревога СКНБ -->
+        <div class="vsm-card reg-article" data-category="tech" data-searchable="скнб буксовый узел нагрев букс колесная пара тревога машинист птэ">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; display: flex; align-items: center; justify-content: center; color: #10b981; flex-shrink: 0;">
+                    <i data-lucide="gauge" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div>
+                    <h2 style="font-size: 1.2rem; font-weight: 800; color: #ffffff;">4. Срабатывание системы СКНБ (нагрев букс) на 400 км/ч</h2>
+                    <div style="font-size: 0.78rem; color: #34d399; font-weight: 700;">ИНСТРУКЦИЯ ПО ЭКСПЛУАТАЦИИ СКНБ ЭВС2 «БЕЛЫЙ КРЕЧЕТ»</div>
+                </div>
+            </div>
+
+            <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.7;">
+                <p style="margin-bottom: 0.8rem;">
+                    Система контроля нагрева букс непрерывно сканирует температуру подшипниковых узлов колесных пар. Нагрев свыше 80°C — прямая угроза разрушения шейки оси и схода с рельсов.
+                </p>
+                <div style="background: rgba(16, 185, 129, 0.08); border-left: 4px solid #10b981; padding: 0.9rem 1.2rem; border-radius: 0 8px 8px 0;">
+                    <strong style="color: #6ee7b7;">Алгоритм действий:</strong>
+                    <ol style="margin-left: 1.25rem; margin-top: 0.35rem; list-style-type: decimal;">
+                        <li>При непрерывном звонке и красном сигнале пульта — НЕМЕДЛЕННО связаться с машинистом по внутренней связи: «Поезд №..., вагон №..., тревога СКНБ!»;</li>
+                        <li>Машинист производит плавное служебное торможение до безопасной скорости или до ближайшей станции осмотра;</li>
+                        <li>Категорически запрещено срывать стоп-кран самостоятельно, если состав находится на кривой малого радиуса или мосту.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Замыкание на корпус вагона -->
+        <div class="vsm-card reg-article" data-category="tech" data-searchable="замыкание на корпус земля утечка тока электрощит пэм изоляция">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(139, 92, 246, 0.15); border: 1px solid #8b5cf6; display: flex; align-items: center; justify-content: center; color: #a78bfa; flex-shrink: 0;">
+                    <i data-lucide="zap-off" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div>
+                    <h2 style="font-size: 1.2rem; font-weight: 800; color: #ffffff;">5. Контроль изоляции: замыкание на корпус вагона («Земля в цепи»)</h2>
+                    <div style="font-size: 0.78rem; color: #c4b5fd; font-weight: 700;">ИНСТРУКЦИЯ ПО ЭЛЕКТРООБОРУДОВАНИЮ ВАГОНОВ ЦЛ-010</div>
+                </div>
+            </div>
+
+            <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.7;">
+                <p style="margin-bottom: 0.8rem;">
+                    Появление индикации утечки на корпус («Земля +» или «Земля –») означает пробой изоляции одного из электропотребителей вагона. При втором замыкании возникает короткое замыкание и пожар.
+                </p>
+                <div style="background: rgba(139, 92, 246, 0.08); border-left: 4px solid #8b5cf6; padding: 0.9rem 1.2rem; border-radius: 0 8px 8px 0;">
+                    <strong style="color: #ddd6fe;">Действия проводника:</strong>
+                    <ul style="margin-left: 1.25rem; margin-top: 0.35rem; list-style-type: disc;">
+                        <li>Отключить второстепенные мощные потребители (подогреватели баков, климатические тэны, бытовые розетки);</li>
+                        <li>Методом поочередного переключения пакетных тумблеров определить аварийную группу потребителей;</li>
+                        <li>Немедленно вызвать поездного электромеханика (ПЭМ) для инструментальной проверки мегомметром.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Забытый багаж и отставшие пассажиры -->
+        <div class="vsm-card reg-article" data-category="luggage" data-searchable="забытые вещи багаж отстал от поезда лу-72 опись телеграмма станция">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(236, 72, 153, 0.15); border: 1px solid #ec4899; display: flex; align-items: center; justify-content: center; color: #f472b6; flex-shrink: 0;">
+                    <i data-lucide="archive" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div>
+                    <h2 style="font-size: 1.2rem; font-weight: 800; color: #ffffff;">6. Забытые вещи и пассажиры, отставшие от поезда</h2>
+                    <div style="font-size: 0.78rem; color: #f472b6; font-weight: 700;">ПРАВИЛА ПЕРЕВОЗОК • СОСТАВЛЕНИЕ АКТА ФОРМЫ ЛУ-72</div>
+                </div>
+            </div>
+
+            <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.7;">
+                <p style="margin-bottom: 0.8rem;">
+                    Если пассажир отстал на промежуточной станции (например, Новая Тверь) или оставил личные вещи при высадке:
+                </p>
+                <div style="background: rgba(236, 72, 153, 0.08); border-left: 4px solid #ec4899; padding: 0.9rem 1.2rem; border-radius: 0 8px 8px 0;">
+                    <strong style="color: #fbcfe8;">Протокол оформления:</strong>
+                    <ol style="margin-left: 1.25rem; margin-top: 0.35rem; list-style-type: decimal;">
+                        <li>При обнаружении вещей немедленно оповестить начальника поезда (ЛНП);</li>
+                        <li>Комиссией в составе 3 человек (ЛНП, проводник, пассажир-свидетель) составить опись вещей по <strong>форме ЛУ-72</strong> в двух экземплярах;</li>
+                        <li>Направить служебную телеграмму дежурному по вокзалу станции, где пассажир сошел/отстал;</li>
+                        <li>Сдать багаж по описи дежурному по станции на ближайшей опорной остановке (Валдай или Санкт-Петербург).</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ИНТЕРАКТИВНОЕ МОДАЛЬНОЕ ОКНО ЧИТАЛКИ ДОКУМЕНТОВ (ВНУТРИБРАУЗЕРНЫЙ PDF ПРОСМОТРЩИК) -->
+<div id="reader-modal" class="vsm-reader-modal" style="display: none;">
+    <div class="vsm-reader-box" id="vsm-reader-container">
+        <!-- Шапка читалки -->
+        <div class="vsm-reader-header">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                    <span id="reader-format-badge" style="background: var(--vsm-cyan); color: #000; font-size: 0.72rem; font-weight: 800; padding: 0.15rem 0.45rem; border-radius: 4px;">
+                        PDF
+                    </span>
+                    <span style="background: rgba(8, 42, 153, 0.4); border: 1px solid rgba(0, 210, 255, 0.3); color: #93c5fd; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px;">
+                        ОПЕРАТОР СКОРОСТНЫХ ЛИНИЙ • ВСМ «Белый кречет»
+                    </span>
+                    <h3 id="reader-title" style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 0;">
+                        Загрузка документа...
+                    </h3>
+                </div>
+                <div id="reader-subtitle" style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.25rem;">
+                    Отраслевой первоисточник
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                <a id="reader-newtab-btn" href="#" target="_blank" class="vsm-btn vsm-btn-outline" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;" title="Открыть PDF в отдельной вкладке">
+                    <i data-lucide="external-link" style="width: 14px; height: 14px;"></i>
+                    <span>В новой вкладке</span>
+                </a>
+                <a id="reader-download-link" href="#" class="vsm-btn vsm-btn-outline" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;" title="Скачать оригинальный PDF">
+                    <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                    <span>Скачать PDF</span>
+                </a>
+                <button onclick="toggleReaderFullscreen()" class="vsm-btn vsm-btn-outline" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;" title="Во весь экран">
+                    <i id="fullscreen-icon" data-lucide="maximize" style="width: 14px; height: 14px;"></i>
+                </button>
+                <button onclick="closeDocumentReader()" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: #fff; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Закрыть (Esc)">
+                    <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Тело читалки (Официальный PDF) -->
+        <div style="flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column;">
+            <div id="vsm-pdf-viewport" style="width: 100%; height: 100%; position: relative; background: #0b1325; display: flex; flex-direction: column;">
+                <div id="vsm-pdf-spinner" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0b1325; z-index: 5;">
+                    <div class="spin" style="width: 36px; height: 36px; border: 3px solid rgba(0, 210, 255, 0.2); border-top-color: var(--vsm-cyan); border-radius: 50%; margin-bottom: 1rem;"></div>
+                    <div style="font-size: 0.95rem; font-weight: 700; color: #fff;">Загрузка официального PDF-документа...</div>
+                    <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.35rem;">Подключение встроенного PDF-просмотрщика ВСМ</div>
+                </div>
+                <iframe id="vsm-pdf-frame" src="" style="width: 100%; height: 100%; border: none; background: #1e293b;" title="PDF Viewer"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Быстрый поиск по базе знаний и фильтрация статей
+function handleRegulationSearch(query) {
+    const q = query.toLowerCase().trim();
+    const clearBtn = document.getElementById('clear-search-btn');
+    if (clearBtn) clearBtn.style.display = q ? 'inline-block' : 'none';
+
+    // Фильтрация шпаргалок
+    document.querySelectorAll('.vsm-cheat-card').forEach(card => {
+        const text = (card.getAttribute('data-searchable') || '').toLowerCase();
+        card.style.display = (!q || text.includes(q)) ? 'block' : 'none';
+    });
+
+    // Фильтрация документов
+    document.querySelectorAll('.vsm-doc-card').forEach(card => {
+        const text = (card.getAttribute('data-searchable') || '').toLowerCase();
+        card.style.display = (!q || text.includes(q)) ? 'flex' : 'none';
+    });
+
+    // Фильтрация подробных статей
+    document.querySelectorAll('.reg-article').forEach(card => {
+        const text = (card.getAttribute('data-searchable') || '').toLowerCase();
+        card.style.display = (!q || text.includes(q)) ? 'block' : 'none';
+    });
+}
+
+function clearRegulationSearch() {
+    const input = document.getElementById('reg-search-input');
+    if (input) {
+        input.value = '';
+        handleRegulationSearch('');
+    }
+}
+
+// Фильтр по категориям
+function filterCategory(cat, el) {
+    document.querySelectorAll('.vsm-filter-pill').forEach(p => p.classList.remove('active'));
+    if (el) el.classList.add('active');
+
+    document.querySelectorAll('.reg-article').forEach(card => {
+        if (cat === 'all') {
+            card.style.display = 'block';
+        } else {
+            const cardCat = card.getAttribute('data-category');
+            card.style.display = (cardCat === cat) ? 'block' : 'none';
+        }
+    });
+}
+
+// Интерактивный PDF-просмотрщик первоисточников
+let isReaderFullscreen = false;
+
+function openDocumentReader(docKey) {
+    const modal = document.getElementById('reader-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    const spinner = document.getElementById('vsm-pdf-spinner');
+    if (spinner) spinner.style.display = 'flex';
+
+    const pdfFrame = document.getElementById('vsm-pdf-frame');
+    const pdfSrc = `/regulations/pdf/${docKey}/#toolbar=1&navpanes=1&zoom=page-width`;
+    if (pdfFrame) {
+        pdfFrame.src = pdfSrc;
+        pdfFrame.onload = function() {
+            if (spinner) spinner.style.display = 'none';
+        };
+    }
+
+    const newTabBtn = document.getElementById('reader-newtab-btn');
+    if (newTabBtn) newTabBtn.href = `/regulations/pdf/${docKey}/`;
+
+    const dlLink = document.getElementById('reader-download-link');
+    if (dlLink) dlLink.href = `/regulations/download/${docKey}/`;
+
+    const titleEl = document.getElementById('reader-title');
+    if (titleEl) titleEl.textContent = "Загрузка регламента...";
+    if (window.lucide) lucide.createIcons();
+
+    fetch(`/api/regulations/reader/${docKey}/`)
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const titleEl = document.getElementById('reader-title');
+            const subtitleEl = document.getElementById('reader-subtitle');
+            const badgeEl = document.getElementById('reader-format-badge');
+            if (titleEl) titleEl.textContent = data.title;
+            if (subtitleEl) subtitleEl.textContent = data.subtitle;
+            if (badgeEl) badgeEl.textContent = data.format || 'Официальный PDF регламента ВСМ';
+            if (window.lucide) lucide.createIcons();
+        }
+    })
+    .catch(err => {
+        console.error("Reader API load error:", err);
+    });
+}
+
+function toggleReaderFullscreen() {
+    const box = document.getElementById('vsm-reader-container');
+    const icon = document.getElementById('fullscreen-icon');
+    isReaderFullscreen = !isReaderFullscreen;
+    if (isReaderFullscreen) {
+        box.style.maxWidth = '100vw';
+        box.style.width = '100vw';
+        box.style.height = '100vh';
+        box.style.borderRadius = '0';
+        if (icon) icon.setAttribute('data-lucide', 'minimize');
+    } else {
+        box.style.maxWidth = '1440px';
+        box.style.width = '96vw';
+        box.style.height = '92vh';
+        box.style.borderRadius = '16px';
+        if (icon) icon.setAttribute('data-lucide', 'maximize');
+    }
+    if (window.lucide) lucide.createIcons();
+}
+
+function closeDocumentReader() {
+    const modal = document.getElementById('reader-modal');
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    const pdfFrame = document.getElementById('vsm-pdf-frame');
+    if (pdfFrame) pdfFrame.src = '';
+    if (isReaderFullscreen) toggleReaderFullscreen();
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('reader-modal');
+        if (modal && modal.style.display === 'flex') {
+            closeDocumentReader();
+        }
+    }
+});
+</script>
+{% endblock %}

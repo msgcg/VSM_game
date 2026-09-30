@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Градиент фона эмблемы -->
+    <linearGradient id="vsmBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a1e4a" />
+      <stop offset="50%" stop-color="#061230" />
+      <stop offset="100%" stop-color="#03081a" />
+    </linearGradient>
+
+    <!-- Градиент контура -->
+    <linearGradient id="vsmBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d2ff" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#2563eb" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#fd033a" stop-opacity="0.8" />
+    </linearGradient>
+
+    <!-- Градиент корпуса скоростного поезда (Белый кречет) -->
+    <linearGradient id="vsmTrain" x1="0%" y1="30%" x2="100%" y2="70%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="70%" stop-color="#e2e8f0" />
+      <stop offset="100%" stop-color="#94a3b8" />
+    </linearGradient>
+
+    <!-- Градиент остекления кабины -->
+    <linearGradient id="vsmGlass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+
+    <!-- Градиент скоростной бирюзовой линии -->
+    <linearGradient id="vsmCyanLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00d2ff" stop-opacity="0.3" />
+      <stop offset="50%" stop-color="#00d2ff" />
+      <stop offset="100%" stop-color="#e0f2fe" />
+    </linearGradient>
+
+    <!-- Градиент рубиновой скоростной полосы -->
+    <linearGradient id="vsmRedLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fd033a" stop-opacity="0.2" />
+      <stop offset="50%" stop-color="#fd033a" />
+      <stop offset="100%" stop-color="#ff4d6d" />
+    </linearGradient>
+
+    <!-- Свечение прожектора -->
+    <filter id="vsmGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Базовый скругленный щит-шестигранник / суперэллипс -->
+  <rect x="5" y="5" width="118" height="118" rx="28" fill="url(#vsmBg)" stroke="url(#vsmBorder)" stroke-width="2.5" />
+
+  <!-- Направляющие рельсы скоростной магистрали (динамическая перспектива) -->
+  <path d="M 18 100 L 110 100" stroke="#00d2ff" stroke-width="1.5" stroke-opacity="0.3" stroke-dasharray="5 3" />
+  <path d="M 24 106 L 104 106" stroke="#2563eb" stroke-width="2" stroke-opacity="0.4" />
+
+  <!-- Динамическое аэродинамическое крыло «Кречет» (верхний скоростной поток) -->
+  <path d="M 16 46 C 42 43, 76 47, 102 59 C 84 55, 52 52, 22 53 Z" fill="url(#vsmCyanLine)" />
+  <path d="M 14 58 C 45 55, 84 62, 112 77 C 91 72, 58 66, 20 66 Z" fill="#00d2ff" fill-opacity="0.8" />
+
+  <!-- Корпус аэродинамического электропоезда ВСМ-1 (плавный скоростной нос) -->
+  <path d="M 20 74 C 48 73, 80 75, 102 82 C 109 84, 114 88, 111 92 C 105 96, 88 96, 72 96 L 20 96 C 24 88, 22 81, 20 74 Z" fill="url(#vsmTrain)" />
+
+  <!-- Остекление кабины машиниста (обтекаемый фонарь) -->
+  <path d="M 66 76 C 80 76, 96 80, 103 84 C 98 86, 86 84, 72 83 C 64 82, 58 80, 56 77 C 60 76, 63 76, 66 76 Z" fill="url(#vsmGlass)" />
+
+  <!-- Рубиновая скоростная полоса вдоль борта поезда -->
+  <path d="M 20 87 L 98 87 C 102 89, 94 91, 86 91 L 20 91 Z" fill="url(#vsmRedLine)" />
+
+  <!-- Головной светодиодный прожектор экспресса -->
+  <circle cx="106" cy="87" r="2.5" fill="#ffffff" filter="url(#vsmGlow)" />
+  <path d="M 107 87 L 119 84 L 119 90 Z" fill="#00d2ff" fill-opacity="0.75" />
+
+  <!-- Скоростные шевроны ВСМ (три динамических крыла скорости в левом верхнем углу) -->
+  <path d="M 26 24 L 38 24 L 50 42 L 38 42 Z" fill="#ffffff" fill-opacity="0.95" />
+  <path d="M 42 24 L 54 24 L 66 42 L 54 42 Z" fill="#00d2ff" fill-opacity="0.9" />
+  <path d="M 58 24 L 70 24 L 82 42 L 70 42 Z" fill="#fd033a" fill-opacity="0.9" />
+</svg>

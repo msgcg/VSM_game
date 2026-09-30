@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <defs>
+    <linearGradient id="pbg_wom" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b0764"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="p_skin_wom" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffedd5"/>
+      <stop offset="100%" stop-color="#fed7aa"/>
+    </linearGradient>
+    <linearGradient id="p_hair_wom" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#78350f"/>
+      <stop offset="100%" stop-color="#451a03"/>
+    </linearGradient>
+    <linearGradient id="p_scarf" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#9333ea"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle with neon violet-cyan border -->
+  <circle cx="80" cy="80" r="76" fill="url(#pbg_wom)" stroke="#c084fc" stroke-width="2.5"/>
+
+  <!-- Hair back -->
+  <path d="M48 50 Q36 85 44 115 Q80 125 116 115 Q124 85 112 50 Z" fill="url(#p_hair_wom)"/>
+
+  <!-- Shoulders & Coat -->
+  <path d="M30 155 Q42 108 80 108 Q118 108 130 155 Z" fill="#1e1b4b"/>
+  
+  <!-- Silk Scarf around neck -->
+  <path d="M56 106 Q80 124 104 106 Q98 132 80 134 Q62 132 56 106 Z" fill="url(#p_scarf)"/>
+  <path d="M74 126 L80 148 L86 126 Z" fill="#be185d"/>
+
+  <!-- Neck -->
+  <rect x="72" y="80" width="16" height="26" rx="4" fill="#fed7aa"/>
+
+  <!-- Head / Face -->
+  <ellipse cx="80" cy="62" rx="23" ry="28" fill="url(#p_skin_wom)"/>
+
+  <!-- Hair front style -->
+  <path d="M56 50 Q66 28 84 28 Q104 28 108 48 Q94 36 78 38 Q62 40 56 50 Z" fill="url(#p_hair_wom)"/>
+  <path d="M52 48 Q56 75 58 84 Q52 70 50 56 Z" fill="url(#p_hair_wom)"/>
+  <path d="M106 48 Q104 75 102 84 Q108 70 110 56 Z" fill="url(#p_hair_wom)"/>
+
+  <!-- Pearl Earrings -->
+  <circle cx="53" cy="66" r="3.5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <circle cx="107" cy="66" r="3.5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+
+  <!-- Eyebrows -->
+  <path d="M64 51 Q71 47 77 50" stroke="#451a03" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M83 50 Q89 47 96 51" stroke="#451a03" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+  <!-- Eyes with eyelashes -->
+  <ellipse cx="70" cy="57" rx="3.5" ry="2.5" fill="#1e1b4b"/>
+  <circle cx="71" cy="56" r="1" fill="#ffffff"/>
+  <path d="M66 54 L69 55" stroke="#1e1b4b" stroke-width="1.5"/>
+  
+  <ellipse cx="90" cy="57" rx="3.5" ry="2.5" fill="#1e1b4b"/>
+  <circle cx="91" cy="56" r="1" fill="#ffffff"/>
+  <path d="M94 54 L91 55" stroke="#1e1b4b" stroke-width="1.5"/>
+
+  <!-- Nose -->
+  <path d="M80 57 L78 66 L82 66" stroke="#fb923c" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Lips (polite / questioning) -->
+  <path d="M73 74 Q80 77 87 74" stroke="#db2777" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+  <!-- Glow Accent -->
+  <circle cx="80" cy="80" r="74" fill="none" stroke="rgba(192, 132, 252, 0.4)" stroke-width="1.5"/>
+</svg>

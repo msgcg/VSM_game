@@ -1,0 +1,34 @@
+.venv
+venv
+ENV
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.git
+.gitignore
+.vscode
+.idea
+Tasks_and_sources/
+
+# SQLite базы данных (образ собирает чистую БД самостоятельно)
+db.sqlite3
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+
+# Логи и временные файлы
+*.log
+*.tmp
+*.bak
+media/
+staticfiles/
+
+# Windows-специфичные бинарники whisper/vulkan и runtime-папки
+simulator/bin/whisper_vulkan/*.exe
+simulator/bin/whisper_vulkan/*.dll
+simulator/bin/whisper_vulkan/tmp/
+simulator/bin/whisper_vulkan/models/
+models/
+simulator/static/simulator/audio/tts_cache/

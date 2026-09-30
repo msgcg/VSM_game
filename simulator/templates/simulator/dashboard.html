@@ -1,0 +1,856 @@
+{% extends 'simulator/base.html' %}
+{% load static %}
+
+{% block title %}Главный пульт | Тренажер проводников ВСМ-1 «Белый кречет»{% endblock %}
+
+{% block content %}
+<!-- Баннер приветствия и оперативной сводки -->
+<div class="vsm-hero-banner">
+    <div class="vsm-hero-content">
+        <div class="vsm-hero-badge">
+            <i data-lucide="zap" style="width: 14px; height: 14px;"></i>
+            <span>Скоростной полигон ВСМ-1 • Режим активной смены</span>
+        </div>
+        <h1 class="vsm-hero-title">Добро пожаловать на борт, {{ conductor.full_name }}!</h1>
+        <p class="vsm-hero-subtitle">
+            Высокоскоростная магистраль — это скорость до 400 км/ч и премиальный уровень сервиса. Решения принимаются за секунды: отрабатывайте стрессовые ситуации, сохраняйте лояльность гостей и управляйте безопасностью рейса.
+        </p>
+        
+        <!-- Показатели проводника -->
+        <div class="vsm-hero-stats">
+            <div class="vsm-stat-item">
+                <div class="vsm-stat-val red">{{ conductor.loyalty_rating }}%</div>
+                <div class="vsm-stat-label">Лояльность гостей</div>
+            </div>
+            <div class="vsm-stat-item">
+                <div class="vsm-stat-val teal">{{ conductor.safety_rating }}%</div>
+                <div class="vsm-stat-label">Рейтинг безопасности</div>
+            </div>
+            <div class="vsm-stat-item">
+                <div class="vsm-stat-val yellow">{{ conductor.experience_points }} XP</div>
+                <div class="vsm-stat-label">Опыт (Уровень {{ conductor.level }})</div>
+            </div>
+            <div class="vsm-stat-item">
+                <div class="vsm-stat-val">{{ conductor.perfect_shifts }} / {{ conductor.shifts_completed }}</div>
+                <div class="vsm-stat-label">Безупречных смен</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Интерактивно-игровая трасса ВСМ-1: Москва — Санкт-Петербург (открытие станций по уровню проводника) -->
+<div class="vsm-card" style="margin-bottom: 2rem; position: relative; overflow: hidden;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(0, 210, 255, 0.15); border: 1px solid var(--vsm-cyan); display: flex; align-items: center; justify-content: center; color: var(--vsm-cyan);">
+                    <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i>
+                </div>
+                <h2 style="font-size: 1.25rem; font-weight: 800; color: #fff;">
+                    Игровой маршрут ВСМ-1: Москва — Санкт-Петербург (679 км)
+                </h2>
+            </div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.25rem;">
+                Открыто станций: <strong style="color: var(--vsm-cyan);">{{ route_progress.unlocked_count }} из {{ route_progress.total_count }} ({{ route_progress.station_percentage }}%)</strong> • 
+                Пройдено: <strong style="color: #10b981;">{{ route_progress.furthest_km }} из {{ route_progress.total_km }} км ({{ route_progress.progress_percentage }}%)</strong> • 
+                Текущая база: <span style="color: #facc15; font-weight: 700;">{{ route_progress.current_station.name }}</span>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <div style="background: rgba(0, 210, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.78rem; font-weight: 700; color: var(--vsm-cyan); display: flex; align-items: center; gap: 0.4rem;">
+                <i data-lucide="train" style="width: 14px; height: 14px;"></i>
+                <span>ЭВС2 «Белый кречет»</span>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.78rem; font-weight: 700; color: #cbd5e1;">
+                Ваш уровень: <strong style="color: #facc15;">{{ conductor.level }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Интерактивная линия станций с кликабельными узлами и активной нитью маршрута -->
+    <div style="overflow-x: auto; padding-bottom: 1rem; padding-top: 0.5rem;">
+        <div style="display: flex; align-items: flex-start; min-width: 980px; justify-content: space-between; position: relative;">
+            
+            <!-- Базовая рельсовая нить от центра первой до центра последней станции -->
+            <div style="position: absolute; top: 20px; left: 55px; right: 55px; height: 5px; background: rgba(255, 255, 255, 0.12); border-radius: 4px; z-index: 1; overflow: hidden;">
+                <!-- Активная разблокированная нить маршрута под галочками пройденных станций -->
+                <div style="height: 100%; width: {{ route_progress.track_percentage_css }}%; background: linear-gradient(90deg, #fd033a 0%, #082a99 35%, #00d2ff 100%); box-shadow: 0 0 14px rgba(0, 210, 255, 0.95); transition: width 0.4s ease; border-radius: 4px;"></div>
+            </div>
+
+            {% for st in route_progress.stations %}
+            <div 
+                onclick="openStationModal({{ st.id }})" 
+                class="{% if not st.is_unlocked %}vsm-locked-station-node{% endif %}"
+                style="position: relative; z-index: 3; text-align: center; width: 110px; cursor: pointer; transition: transform 0.25s ease;"
+                title="{% if st.is_unlocked %}{{ st.name }} (открыто) • Нажмите для просмотра сведений{% else %}{{ st.name }} (заблокировано) • Требуется уровень {{ st.required_level }} (нажмите для условий открытия){% endif %}"
+                role="button"
+                tabindex="0"
+                onkeydown="if(event.key==='Enter'||event.key===' ') openStationModal({{ st.id }})"
+            >
+                <!-- Индикатор поезда на крайней открытой станции -->
+                {% if st.id == route_progress.current_station.id %}
+                <div style="position: absolute; top: -28px; left: 50%; transform: translateX(-50%); background: #fd033a; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 0.15rem 0.5rem; border-radius: 12px; white-space: nowrap; box-shadow: 0 0 12px #fd033a; animation: pulseStreak 1.8s infinite; display: inline-flex; align-items: center; gap: 0.25rem;">
+                    <i data-lucide="navigation" style="width: 10px; height: 10px;"></i>
+                    <span>ПОЕЗД ЗДЕСЬ</span>
+                </div>
+                {% endif %}
+
+                <!-- Точка станции -->
+                {% if st.is_unlocked %}
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: {% if st.km == 0 or st.km == 679 %}#fd033a{% else %}var(--vsm-cyan){% endif %}; border: 3px solid #fff; margin: 8px auto 8px; box-shadow: 0 0 12px {% if st.km == 0 or st.km == 679 %}#fd033a{% else %}var(--vsm-cyan){% endif %}; display: flex; align-items: center; justify-content: center; color: #000;">
+                    <i data-lucide="check" style="width: 14px; height: 14px; stroke-width: 3;"></i>
+                </div>
+                <div style="font-size: 0.82rem; font-weight: 800; color: #ffffff;">{{ st.name }}</div>
+                <div style="font-size: 0.68rem; color: var(--vsm-cyan); font-weight: 600;">{{ st.km }} км</div>
+                <span style="font-size: 0.65rem; color: #10b981; font-weight: 700; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.1rem 0.35rem; border-radius: 4px; display: inline-block; margin-top: 0.2rem;">
+                    Открыто
+                </span>
+                {% else %}
+                <div class="vsm-locked-station-lock" style="width: 28px; height: 28px; border-radius: 50%; background: rgba(30, 41, 59, 0.9); border: 2px solid #64748b; margin: 8px auto 8px; display: flex; align-items: center; justify-content: center; color: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.25); transition: all 0.2s ease;">
+                    <i data-lucide="lock" style="width: 13px; height: 13px;"></i>
+                </div>
+                <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8;">{{ st.name }}</div>
+                <div style="font-size: 0.68rem; color: #64748b;">{{ st.km }} км</div>
+                <span style="font-size: 0.65rem; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); padding: 0.1rem 0.4rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 0.25rem; margin-top: 0.2rem;">
+                    <i data-lucide="lock" style="width: 10px; height: 10px;"></i>
+                    Ур. {{ st.required_level }}
+                </span>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+        </div>
+    </div>
+</div>
+
+<!-- Промо-баннер: Режим «Бесконечная карусель скоростных решений» -->
+<div class="vsm-card" style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(8, 42, 153, 0.45) 0%, rgba(13, 22, 41, 0.95) 100%); border: 2px solid rgba(0, 210, 255, 0.35); position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(253, 3, 58, 0.25) 0%, transparent 70%); pointer-events: none;"></div>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; position: relative; z-index: 2;">
+        <div style="max-width: 750px;">
+            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; flex-wrap: wrap;">
+                <span style="background: rgba(0, 210, 255, 0.15); color: var(--vsm-cyan); border: 1px solid rgba(0, 210, 255, 0.35); font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 6px; letter-spacing: 0.05em; text-transform: uppercase;">
+                    Тренажер оперативных решений
+                </span>
+                <span style="background: rgba(255, 255, 255, 0.06); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.12); font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 6px;">
+                    Скоростной диапазон: 250–400 км/ч
+                </span>
+                {% if endless_best_streak > 0 %}
+                <span style="color: #ff6b8b; font-size: 0.78rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem;">
+                    <span>Ваш рекорд стрика: {{ endless_best_streak }}</span>
+                </span>
+                {% endif %}
+            </div>
+            <h2 style="font-size: 1.45rem; font-weight: 900; color: #ffffff; line-height: 1.3; margin-bottom: 0.5rem;">
+                Карусель скоростных решений
+            </h2>
+            <p style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5;">
+                Непрерывная череда ситуационных кейсов из реальных отраслевых регламентов ВСМ и практических руководств экипажа. Разгоняйте поезд «Белый кречет» до 400 км/ч, поддерживайте стрик верных решений, зарабатывайте множители очков до 5x и держите баланс безопасности и лояльности!
+            </p>
+            <div style="display: flex; gap: 1.25rem; margin-top: 0.85rem; font-size: 0.78rem; color: #94a3b8; flex-wrap: wrap;">
+                <span style="display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="layers" style="width: 15px; height: 15px; color: var(--vsm-cyan);"></i>
+                    5 уровней сложности
+                </span>
+                <span style="display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="zap" style="width: 15px; height: 15px; color: #facc15;"></i>
+                    {{ endless_challenges_count }} ситуационных кейсов
+                </span>
+                <span style="display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="timer" style="width: 15px; height: 15px; color: #ff6b8b;"></i>
+                    Таймер от 25 до 9 сек
+                </span>
+            </div>
+        </div>
+
+        <div class="vsm-endless-cta">
+            <a href="{% url 'simulator:endless_carousel' %}" class="vsm-btn vsm-btn-primary" style="padding: 0.85rem 1.75rem; font-size: 0.95rem; font-weight: 800; box-shadow: 0 0 25px rgba(253, 3, 58, 0.4);">
+                <i data-lucide="play" style="width: 18px; height: 18px;"></i>
+                <span>{% if has_active_endless %}Продолжить смену{% else %}Заступить на карусель смены{% endif %}</span>
+            </a>
+            <span style="font-size: 0.72rem; color: #94a3b8;">Клавиатурное управление [1, 2, 3, 4]</span>
+        </div>
+    </div>
+</div>
+
+<!-- Выбор программы обучения проводника по классам обслуживания ВСМ -->
+<div class="vsm-card vsm-tracks-section">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem;">
+                <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(0, 210, 255, 0.15); border: 1px solid var(--vsm-cyan); display: flex; align-items: center; justify-content: center; color: var(--vsm-cyan);">
+                    <i data-lucide="graduation-cap" style="width: 16px; height: 16px;"></i>
+                </div>
+                <h2 style="font-size: 1.25rem; font-weight: 800; color: #fff;">
+                    Программы подготовки проводников по классам ВСМ-1
+                </h2>
+            </div>
+            <p style="font-size: 0.85rem; color: #94a3b8; max-width: 820px; line-height: 1.45;">
+                Выберите квалификационную специализацию. Кейсы и экспресс-задачи сфокусируются на регламентах выбранного класса (с обязательным общепоездным блоком безопасности и ПТЭ).
+            </p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <a href="?track=all" class="vsm-btn {% if selected_track == 'all' %}vsm-btn-primary{% else %}vsm-btn-outline{% endif %}" style="padding: 0.4rem 0.85rem; font-size: 0.78rem; border-radius: 8px;">
+                <i data-lucide="layers" style="width: 14px; height: 14px;"></i>
+                <span>Все классы ({{ all_scenarios_count }})</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 3 карточки специализации -->
+    <div class="vsm-track-grid">
+        <!-- 1. Эконом-класс (Стандарт) -->
+        <div onclick="selectTrainingTrack('economy')" class="vsm-track-card {% if selected_track == 'economy' %}active{% endif %}" role="button" tabindex="0">
+            <div class="vsm-track-card-header">
+                <div class="vsm-track-icon-wrap" style="background: rgba(0, 210, 255, 0.15); border: 1px solid var(--vsm-cyan); color: var(--vsm-cyan);">
+                    <i data-lucide="shield-check" style="width: 22px; height: 22px;"></i>
+                </div>
+                {% if current_track == 'economy' %}
+                <span class="vsm-track-active-pill">
+                    <i data-lucide="check" style="width: 12px; height: 12px;"></i>
+                    <span>Ваш профиль</span>
+                </span>
+                {% elif track_progress.economy.is_certified %}
+                <span style="font-size: 0.7rem; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.15); padding: 0.2rem 0.5rem; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                    Аттестован
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="vsm-track-title">Эконом-класс (Стандарт)</div>
+            <div class="vsm-track-desc">
+                Вагоны № 5–8 (212 мест). Посадка по УКЭБ, негабаритный багаж, правила переносок животных, быстрый разгон и деэскалация очередей.
+            </div>
+
+            <div class="vsm-track-progress-wrap">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.35rem;">
+                    <span style="color: #cbd5e1; font-weight: 600;">Пройдено кейсов:</span>
+                    <strong style="color: var(--vsm-cyan);">{{ track_progress.economy.passed }} из {{ track_progress.economy.total }} ({{ track_progress.economy.percentage }}%)</strong>
+                </div>
+                <div class="vsm-progress-track" style="height: 6px;">
+                    <div class="vsm-progress-fill" style="width: {{ track_progress.economy.percentage }}%; background: var(--vsm-cyan);"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Комфорт-класс -->
+        <div onclick="selectTrainingTrack('comfort')" class="vsm-track-card {% if selected_track == 'comfort' %}active{% endif %}" role="button" tabindex="0">
+            <div class="vsm-track-card-header">
+                <div class="vsm-track-icon-wrap" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981;">
+                    <i data-lucide="smile" style="width: 22px; height: 22px;"></i>
+                </div>
+                {% if current_track == 'comfort' %}
+                <span class="vsm-track-active-pill" style="border-color: #10b981; color: #10b981; background: rgba(16, 185, 129, 0.15); box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);">
+                    <i data-lucide="check" style="width: 12px; height: 12px;"></i>
+                    <span>Ваш профиль</span>
+                </span>
+                {% elif track_progress.comfort.is_certified %}
+                <span style="font-size: 0.7rem; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.15); padding: 0.2rem 0.5rem; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                    Аттестован
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="vsm-track-title">Комфорт-класс</div>
+            <div class="vsm-track-desc">
+                Вагоны № 3–4 (купе МГН и семейная зона). Сопровождение маломобильных пассажиров, детей без родителей, дорожные наборы, аллергены.
+            </div>
+
+            <div class="vsm-track-progress-wrap">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.35rem;">
+                    <span style="color: #cbd5e1; font-weight: 600;">Пройдено кейсов:</span>
+                    <strong style="color: #10b981;">{{ track_progress.comfort.passed }} из {{ track_progress.comfort.total }} ({{ track_progress.comfort.percentage }}%)</strong>
+                </div>
+                <div class="vsm-progress-track" style="height: 6px;">
+                    <div class="vsm-progress-fill" style="width: {{ track_progress.comfort.percentage }}%; background: #10b981;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Бизнес и Первый класс -->
+        <div onclick="selectTrainingTrack('business')" class="vsm-track-card {% if selected_track == 'business' %}active{% endif %}" role="button" tabindex="0">
+            <div class="vsm-track-card-header">
+                <div class="vsm-track-icon-wrap" style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #f59e0b;">
+                    <i data-lucide="crown" style="width: 22px; height: 22px;"></i>
+                </div>
+                {% if current_track == 'business' %}
+                <span class="vsm-track-active-pill" style="border-color: #f59e0b; color: #f59e0b; background: rgba(245, 158, 11, 0.15); box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);">
+                    <i data-lucide="check" style="width: 12px; height: 12px;"></i>
+                    <span>Ваш профиль</span>
+                </span>
+                {% elif track_progress.business.is_certified %}
+                <span style="font-size: 0.7rem; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.15); padding: 0.2rem 0.5rem; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                    Аттестован
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="vsm-track-title">Бизнес и Первый класс</div>
+            <div class="vsm-track-desc">
+                Вагоны № 1–2 (VIP-купе и переговорная). Сервисный этикет, ресторанное меню, тихая зона, урегулирование статусных споров за 10 мин.
+            </div>
+
+            <div class="vsm-track-progress-wrap">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.35rem;">
+                    <span style="color: #cbd5e1; font-weight: 600;">Пройдено кейсов:</span>
+                    <strong style="color: #f59e0b;">{{ track_progress.business.passed }} из {{ track_progress.business.total }} ({{ track_progress.business.percentage }}%)</strong>
+                </div>
+                <div class="vsm-progress-track" style="height: 6px;">
+                    <div class="vsm-progress-fill" style="width: {{ track_progress.business.percentage }}%; background: #f59e0b;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Основной блок с двумя колонками: Сценарии (слева) и Компетенции + Лидеры (справа) -->
+<div class="vsm-dashboard-grid">
+    <!-- Левая колонка: Обучающие сценарии и экспресс-кейсы карусели -->
+    <div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+                <h2 style="font-size: 1.35rem; font-weight: 800; color: #ffffff;">Задачи и ситуации ВСМ</h2>
+                <p style="font-size: 0.85rem; color: #94a3b8;">Пройдено сценариев: {{ passed_count }} из {{ total_scenarios_count }} • Доступно в карусели: {{ endless_challenges_count }}</p>
+            </div>
+            <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+                <div class="vsm-tab-switcher" style="display: inline-flex; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 3px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <button id="tab-btn-scenarios" onclick="switchDashboardTab('scenarios')" class="vsm-tab-pill active" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 6px; border: none; cursor: pointer; background: var(--vsm-primary); color: #fff;">
+                        Сюжетные сценарии ({{ scenarios.count }})
+                    </button>
+                    <button id="tab-btn-carousel" onclick="switchDashboardTab('carousel')" class="vsm-tab-pill" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 700; border-radius: 6px; border: none; cursor: pointer; background: transparent; color: #94a3b8;">
+                        Экспресс-кейсы карусели ({{ endless_challenges_count }})
+                    </button>
+                </div>
+                <a href="{% url 'simulator:scenario_list' %}" class="vsm-btn vsm-btn-outline" style="padding: 0.45rem 0.85rem; font-size: 0.78rem;">
+                    <span>Каталог</span>
+                    <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Контейнер сюжетных сценариев -->
+        <div id="dashboard-scenarios-container" class="vsm-scenarios-grid">
+            {% for sc in scenarios %}
+            <div class="vsm-scenario-card">
+                <div class="vsm-scenario-thumb">
+                    <img src="{% static 'simulator/img/' %}{{ sc.background_image }}" alt="{{ sc.title }}" class="vsm-scenario-img">
+                    <div class="vsm-scenario-overlay"></div>
+                    <div class="vsm-scenario-speed-badge">
+                        <i data-lucide="gauge" style="width: 12px; height: 12px;"></i>
+                        <span>{{ sc.train_speed }} км/ч</span>
+                    </div>
+                    <div class="vsm-scenario-diff-badge diff-{{ sc.difficulty }}">
+                        {{ sc.get_difficulty_display }}
+                    </div>
+                </div>
+
+                <div class="vsm-scenario-body">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; gap: 0.5rem; flex-wrap: wrap;">
+                        <div class="vsm-scenario-category">{{ sc.get_category_display }}</div>
+                        {% with badge=sc.get_service_class_badge %}
+                        <span class="vsm-service-pill {{ badge.css_class }}">
+                            <i data-lucide="{{ badge.icon }}" style="width: 12px; height: 12px;"></i>
+                            <span>{{ badge.label }}</span>
+                        </span>
+                        {% endwith %}
+                    </div>
+                    <h3 class="vsm-scenario-title">{{ sc.title }}</h3>
+                    <p class="vsm-scenario-desc">{{ sc.description }}</p>
+
+                    <div class="vsm-scenario-meta">
+                        <div class="vsm-scenario-meta-item">
+                            <i data-lucide="armchair" style="width: 14px; height: 14px; color: var(--vsm-cyan);"></i>
+                            <span>{{ sc.car_info }}</span>
+                        </div>
+                        <div class="vsm-scenario-meta-item">
+                            <i data-lucide="award" style="width: 14px; height: 14px; color: #facc15;"></i>
+                            <span>+{{ sc.base_xp }} XP</span>
+                        </div>
+                    </div>
+
+                    <a href="{% url 'simulator:scenario_detail' slug=sc.slug %}" class="vsm-btn vsm-btn-primary" style="width: 100%;">
+                        <span>Инструктаж и пуск</span>
+                        <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Контейнер экспресс-кейсов скоростной карусели -->
+        <div id="dashboard-carousel-container" class="vsm-scenarios-grid" style="display: none;">
+            {% for c in carousel_challenges|slice:":12" %}
+            <div class="vsm-scenario-card" style="border: 1px solid rgba(0, 210, 255, 0.2);">
+                <div class="vsm-scenario-thumb" style="height: 120px;">
+                    <img src="{% static 'simulator/img/' %}{{ c.get_cover_image }}" alt="{{ c.title }}" class="vsm-scenario-img">
+                    <div class="vsm-scenario-overlay"></div>
+                    <div class="vsm-scenario-speed-badge">
+                        <i data-lucide="gauge" style="width: 12px; height: 12px;"></i>
+                        <span>{{ c.train_speed }} км/ч</span>
+                    </div>
+                    <div class="vsm-scenario-diff-badge diff-{% if c.difficulty_level <= 1 %}easy{% elif c.difficulty_level == 2 %}medium{% elif c.difficulty_level <= 4 %}hard{% else %}expert{% endif %}">
+                        Уровень {{ c.difficulty_level }}
+                    </div>
+                </div>
+
+                <div class="vsm-scenario-body">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; gap: 0.35rem; flex-wrap: wrap;">
+                        <div class="vsm-scenario-category">{{ c.get_category_display }}</div>
+                        <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                            {% with badge=c.get_service_class_badge %}
+                            <span class="vsm-service-pill {{ badge.css_class }}" style="font-size: 0.65rem; padding: 0.12rem 0.45rem;">
+                                <i data-lucide="{{ badge.icon }}" style="width: 11px; height: 11px;"></i>
+                                <span>{{ badge.label }}</span>
+                            </span>
+                            {% endwith %}
+                            {% if c.source_type == 'scenario' %}
+                            <span style="font-size: 0.65rem; color: var(--vsm-cyan); background: rgba(0, 210, 255, 0.12); padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 700; border: 1px solid rgba(0, 210, 255, 0.3);">Из сценария</span>
+                            {% else %}
+                            <span style="font-size: 0.65rem; color: #facc15; background: rgba(250, 204, 21, 0.12); padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 700; border: 1px solid rgba(250, 204, 21, 0.3);">Экспресс</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <h3 class="vsm-scenario-title" style="font-size: 0.95rem;">{{ c.title }}</h3>
+                    <p class="vsm-scenario-desc" style="-webkit-line-clamp: 2;">{{ c.situation_text }}</p>
+
+                    <div class="vsm-scenario-meta">
+                        <div class="vsm-scenario-meta-item">
+                            <i data-lucide="armchair" style="width: 14px; height: 14px; color: var(--vsm-cyan);"></i>
+                            <span>{{ c.car_info }}</span>
+                        </div>
+                        <div class="vsm-scenario-meta-item">
+                            <i data-lucide="timer" style="width: 14px; height: 14px; color: #ff6b8b;"></i>
+                            <span>{{ c.timer_seconds }} сек</span>
+                        </div>
+                    </div>
+
+                    <a href="{% url 'simulator:endless_carousel' %}?challenge_id={{ c.id }}" class="vsm-btn vsm-btn-primary" style="width: 100%; padding: 0.55rem 1rem;">
+                        <i data-lucide="zap" style="width: 15px; height: 15px;"></i>
+                        <span>Решить в карусели</span>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div id="dashboard-carousel-more" style="display: none; text-align: center; margin-top: 1rem;">
+            <a href="{% url 'simulator:endless_carousel' %}" class="vsm-btn vsm-btn-outline" style="padding: 0.6rem 1.5rem;">
+                <i data-lucide="rotate-cw" style="width: 16px; height: 16px;"></i>
+                <span>Открыть скоростную карусель (все {{ endless_challenges_count }} ситуаций)</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Правая колонка: Профиль, Радар компетенций и Лидеры -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Карточка статуса проводника -->
+        <div class="vsm-card">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
+                <img src="{% static 'simulator/img/' %}{{ conductor.avatar }}" alt="Avatar" style="width: 64px; height: 64px; border-radius: 50%; border: 3px solid var(--vsm-cyan);">
+                <div>
+                    <h3 style="font-size: 1.1rem; font-weight: 800; color: #ffffff;">{{ conductor.full_name }}</h3>
+                    <div style="font-size: 0.78rem; color: var(--vsm-cyan); font-weight: 600;">{{ conductor.get_rank_display }}</div>
+                    <div style="font-size: 0.72rem; color: #94a3b8;">Табельный: {{ conductor.badge_number }}</div>
+                </div>
+            </div>
+
+            <!-- Прогресс XP к следующему рангу -->
+            <div style="margin-bottom: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; margin-bottom: 0.4rem;">
+                    <span style="color: #cbd5e1;">Уровень {{ conductor.level }}</span>
+                    <span style="color: var(--vsm-cyan);">{{ progress.progress_xp }} / 500 XP</span>
+                </div>
+                <div class="vsm-progress-track">
+                    <div class="vsm-progress-fill" style="width: {{ progress.percentage }}%; background: linear-gradient(90deg, var(--vsm-primary) 0%, var(--vsm-cyan) 100%);"></div>
+                </div>
+                <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.35rem;">
+                    До уровня {{ conductor.level|add:"1" }}: еще {{ progress.needed_xp }} XP
+                </div>
+            </div>
+
+            <!-- Компетенции проводника -->
+            <h4 style="font-size: 0.85rem; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.75rem;">
+                Матрица компетенций ВСМ
+            </h4>
+            <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                {% for cs in competencies %}
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.25rem;">
+                        <span style="color: #e2e8f0; font-weight: 600;">{{ cs.competency.title }}</span>
+                        <span style="color: var(--vsm-cyan); font-weight: 800;">{{ cs.score }}%</span>
+                    </div>
+                    <div class="vsm-progress-track" style="height: 6px;">
+                        <div class="vsm-progress-fill" style="width: {{ cs.score }}%; background: {{ cs.competency.color }};"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--vsm-border);">
+                <a href="{% url 'simulator:profile' %}" class="vsm-btn vsm-btn-outline" style="width: 100%; font-size: 0.8rem; padding: 0.6rem;">
+                    <span>Личный паспорт проводника</span>
+                    <i data-lucide="user-check" style="width: 14px; height: 14px;"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Топ лидеров экипажа -->
+        <div class="vsm-card">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                <h3 style="font-size: 0.95rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="award" style="color: #facc15; width: 18px; height: 18px;"></i>
+                    <span>Лидеры поездных бригад</span>
+                </h3>
+                <a href="{% url 'simulator:leaderboard' %}" style="font-size: 0.75rem; color: var(--vsm-cyan); text-decoration: none;">Все</a>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                {% for top_c in top_conductors %}
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.6rem; background: rgba(255, 255, 255, 0.03); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                        <div class="vsm-rank-badge rank-{{ forloop.counter }}">{{ forloop.counter }}</div>
+                        <img src="{% static 'simulator/img/' %}{{ top_c.avatar }}" alt="" style="width: 28px; height: 28px; border-radius: 50%;">
+                        <div>
+                            <div style="font-size: 0.8rem; font-weight: 700; color: #fff;">{{ top_c.full_name }}</div>
+                            <div style="font-size: 0.68rem; color: #94a3b8;">{{ top_c.depot|truncatechars:22 }}</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.82rem; font-weight: 800; color: #facc15;">{{ top_c.experience_points }} XP</div>
+                        <div style="font-size: 0.68rem; color: #10b981;">{{ top_c.loyalty_rating }}% лояльн.</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Последние разблокированные достижения -->
+        <div class="vsm-card">
+            <h3 style="font-size: 0.95rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 1rem;">
+                <i data-lucide="shield-check" style="color: var(--vsm-cyan); width: 18px; height: 18px;"></i>
+                <span>Трофеи и ачивки смены</span>
+            </h3>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                {% for ca in latest_achievements %}
+                <div style="display: flex; align-items: center; gap: 0.75rem; background: rgba(255, 255, 255, 0.03); padding: 0.6rem 0.8rem; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                    <div style="width: 36px; height: 36px; border-radius: 8px; background: {{ ca.achievement.badge_color }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem; flex-shrink: 0;">
+                        <i data-lucide="{{ ca.achievement.icon_name }}" style="width: 18px; height: 18px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.82rem; font-weight: 700; color: #fff;">{{ ca.achievement.title }}</div>
+                        <div style="font-size: 0.7rem; color: #94a3b8;">{{ ca.achievement.description|truncatechars:45 }}</div>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="font-size: 0.8rem; color: #94a3b8; text-align: center; padding: 1rem;">
+                    Пройдите свой первый рейс для открытия почетных наград!
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно станции скоростного маршрута ВСМ-1 -->
+<div id="vsm-station-modal" class="vsm-modal-backdrop" style="display: none;">
+    <div class="vsm-station-modal-box">
+        <!-- Хедер модалки -->
+        <div class="vsm-station-modal-header">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
+                    <span id="st-modal-status-badge" style="font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 6px; text-transform: uppercase;"></span>
+                    <span id="st-modal-km-badge" style="font-size: 0.75rem; font-weight: 700; color: var(--vsm-cyan); background: rgba(0, 210, 255, 0.12); padding: 0.2rem 0.6rem; border-radius: 6px; border: 1px solid rgba(0, 210, 255, 0.3);"></span>
+                </div>
+                <h3 id="st-modal-title" style="font-size: 1.5rem; font-weight: 900; color: #ffffff; line-height: 1.2;"></h3>
+                <div id="st-modal-subname" style="font-size: 0.85rem; color: #94a3b8; margin-top: 0.2rem;"></div>
+            </div>
+            <button onclick="closeStationModal()" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; flex-shrink: 0;">
+                <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+            </button>
+        </div>
+
+        <!-- Тело модалки -->
+        <div class="vsm-station-modal-body">
+            <!-- Сетка параметров перегона -->
+            <div class="vsm-station-params-grid">
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.75rem; text-align: center;">
+                    <div style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Скорость перегона</div>
+                    <div id="st-modal-speed" style="font-size: 1.05rem; font-weight: 800; color: var(--vsm-cyan); margin-top: 0.2rem;"></div>
+                </div>
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.75rem; text-align: center;">
+                    <div style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Время от Москвы</div>
+                    <div id="st-modal-time" style="font-size: 1.05rem; font-weight: 800; color: #ffffff; margin-top: 0.2rem;"></div>
+                </div>
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.75rem; text-align: center;">
+                    <div style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Бонус за открытие</div>
+                    <div id="st-modal-bonus" style="font-size: 1.05rem; font-weight: 800; color: #facc15; margin-top: 0.2rem;"></div>
+                </div>
+            </div>
+
+            <!-- Инфраструктура и особенности перегона -->
+            <div>
+                <h4 style="font-size: 0.82rem; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="check-circle-2" style="width: 15px; height: 15px; color: var(--vsm-cyan);"></i>
+                    <span>Особенности участка и инфраструктура ВСМ</span>
+                </h4>
+                <ul id="st-modal-features" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.45rem;">
+                </ul>
+            </div>
+
+            <!-- Сценарии внештатных ситуаций сектора -->
+            <div>
+                <h4 style="font-size: 0.82rem; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="alert-triangle" style="width: 15px; height: 15px; color: #f59e0b;"></i>
+                    <span>Внештатные сценарии этого сектора магистрали</span>
+                </h4>
+                <div id="st-modal-scenarios" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                </div>
+            </div>
+
+            <!-- Экспресс-кейсы скоростной карусели сектора -->
+            <div id="st-modal-carousel-section" style="display: none;">
+                <h4 style="font-size: 0.82rem; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="zap" style="width: 15px; height: 15px; color: var(--vsm-cyan);"></i>
+                    <span>Экспресс-кейсы карусели на этом участке</span>
+                </h4>
+                <div id="st-modal-challenges" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                </div>
+            </div>
+
+            <!-- Рекомендация проводнику -->
+            <div id="st-modal-level-tip" style="background: rgba(8, 42, 153, 0.25); border: 1px solid rgba(0, 210, 255, 0.2); border-radius: 12px; padding: 0.85rem; font-size: 0.82rem; color: #cbd5e1; display: flex; align-items: center; gap: 0.75rem;">
+            </div>
+        </div>
+
+        <!-- Футер модалки -->
+        <div class="vsm-station-modal-footer">
+            <span style="font-size: 0.75rem; color: #94a3b8;">Магистраль ВСМ-1 • ЭВС2 «Белый кречет» (400 км/ч)</span>
+            <button onclick="closeStationModal()" class="vsm-btn vsm-btn-outline" style="padding: 0.45rem 1.25rem; font-size: 0.82rem;">
+                Закрыть
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script id="vsm-stations-data" type="application/json">{{ stations_json|safe }}</script>
+<script>
+let vsmStations = [];
+try {
+    const raw = document.getElementById('vsm-stations-data').textContent;
+    vsmStations = JSON.parse(raw);
+} catch (e) {
+    console.error('Ошибка парсинга станций ВСМ:', e);
+}
+
+const conductorCurrentLevel = {{ conductor.level|default:1 }};
+
+function switchDashboardTab(tab) {
+    const scTab = document.getElementById('dashboard-scenarios-container');
+    const crTab = document.getElementById('dashboard-carousel-container');
+    const crMore = document.getElementById('dashboard-carousel-more');
+    const btnSc = document.getElementById('tab-btn-scenarios');
+    const btnCr = document.getElementById('tab-btn-carousel');
+
+    if (tab === 'carousel') {
+        if (scTab) scTab.style.display = 'none';
+        if (crTab) crTab.style.display = 'grid';
+        if (crMore) crMore.style.display = 'block';
+        if (btnSc) {
+            btnSc.style.background = 'transparent';
+            btnSc.style.color = '#94a3b8';
+        }
+        if (btnCr) {
+            btnCr.style.background = 'var(--vsm-primary)';
+            btnCr.style.color = '#fff';
+        }
+    } else {
+        if (scTab) scTab.style.display = 'grid';
+        if (crTab) crTab.style.display = 'none';
+        if (crMore) crMore.style.display = 'none';
+        if (btnSc) {
+            btnSc.style.background = 'var(--vsm-primary)';
+            btnSc.style.color = '#fff';
+        }
+        if (btnCr) {
+            btnCr.style.background = 'transparent';
+            btnCr.style.color = '#94a3b8';
+        }
+    }
+    if (window.lucide) lucide.createIcons();
+}
+
+function openStationModal(stationId) {
+    const id = parseInt(stationId, 10);
+    const st = vsmStations.find(s => s.id === id || s.id === stationId);
+    if (!st) {
+        console.warn('Станция не найдена:', stationId);
+        return;
+    }
+
+    if (window.vsmAudio) {
+        if (!st.is_unlocked) {
+            window.vsmAudio.playWarning();
+        } else {
+            window.vsmAudio.playClick();
+        }
+    }
+
+    const modal = document.getElementById('vsm-station-modal');
+    if (!modal) return;
+    document.getElementById('st-modal-title').textContent = st.name;
+    document.getElementById('st-modal-subname').textContent = st.subname || '';
+    document.getElementById('st-modal-km-badge').textContent = `${st.km} км трассы ВСМ`;
+    document.getElementById('st-modal-speed').textContent = st.speed_limit;
+    document.getElementById('st-modal-time').textContent = st.travel_time;
+    document.getElementById('st-modal-bonus').textContent = `+${st.bonus_xp} XP`;
+
+    const statusBadge = document.getElementById('st-modal-status-badge');
+    if (st.is_unlocked) {
+        statusBadge.textContent = 'Участок разблокирован';
+        statusBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+        statusBadge.style.color = '#10b981';
+        statusBadge.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+    } else {
+        statusBadge.textContent = `Требуется Уровень ${st.required_level}`;
+        statusBadge.style.background = 'rgba(245, 158, 11, 0.2)';
+        statusBadge.style.color = '#f59e0b';
+        statusBadge.style.border = '1px solid rgba(245, 158, 11, 0.4)';
+    }
+
+    // Особенности
+    const featuresList = document.getElementById('st-modal-features');
+    featuresList.innerHTML = '';
+    (st.features || []).forEach(f => {
+        const li = document.createElement('li');
+        li.style.cssText = 'background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); padding: 0.5rem 0.75rem; border-radius: 8px; font-size: 0.8rem; color: #e2e8f0; display: flex; align-items: center; gap: 0.5rem;';
+        li.innerHTML = `<span style="color: var(--vsm-cyan); font-weight: 800;">•</span> <span>${f}</span>`;
+        featuresList.appendChild(li);
+    });
+
+    // Сценарии
+    const scenariosBox = document.getElementById('st-modal-scenarios');
+    scenariosBox.innerHTML = '';
+    const scList = (st.scenarios_detail && st.scenarios_detail.length > 0) ? st.scenarios_detail : (st.scenarios_here || []).map(slug => ({
+        slug: slug,
+        title: slug,
+        description: 'Отработка действий экипажа на скорости до ' + st.speed_limit,
+        difficulty: 'Средний',
+        difficulty_code: 'medium'
+    }));
+
+    if (scList.length === 0) {
+        scenariosBox.innerHTML = '<div style="font-size: 0.8rem; color: #94a3b8;">На этом участке нет активных чрезвычайных ситуаций. Рейс в штатном режиме.</div>';
+    } else {
+        scList.forEach(sc => {
+            const item = document.createElement('div');
+            item.className = 'vsm-modal-scenario-item';
+            item.innerHTML = `
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; flex-wrap: wrap;">
+                        <span style="font-size: 0.88rem; font-weight: 700; color: #ffffff;">${sc.title}</span>
+                        <span class="vsm-badge vsm-badge-${sc.difficulty_code || 'medium'}" style="font-size: 0.65rem; padding: 0.15rem 0.55rem; border-radius: 6px;">${sc.difficulty || 'ВСМ'}</span>
+                    </div>
+                    <span style="font-size: 0.75rem; color: #94a3b8; line-height: 1.4; display: block;">${sc.description || 'Отработка действий экипажа на скорости до ' + st.speed_limit}</span>
+                </div>
+                <a href="/scenario/${sc.slug}/" class="vsm-btn vsm-btn-primary" style="padding: 0.45rem 0.95rem; font-size: 0.78rem; white-space: nowrap; flex-shrink: 0;">
+                    <span>Запустить</span>
+                    <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+                </a>
+            `;
+            scenariosBox.appendChild(item);
+        });
+    }
+
+    // Экспресс-кейсы скоростной карусели
+    const challengesBox = document.getElementById('st-modal-challenges');
+    const carouselSection = document.getElementById('st-modal-carousel-section');
+    if (challengesBox && carouselSection) {
+        challengesBox.innerHTML = '';
+        const chList = st.carousel_challenges_detail || [];
+        if (chList.length === 0) {
+            carouselSection.style.display = 'none';
+        } else {
+            carouselSection.style.display = 'block';
+            chList.forEach(ch => {
+                const item = document.createElement('div');
+                item.className = 'vsm-modal-scenario-item';
+                item.style.borderColor = 'rgba(0, 210, 255, 0.25)';
+                item.innerHTML = `
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; flex-wrap: wrap;">
+                            <span style="font-size: 0.88rem; font-weight: 700; color: #ffffff;">${ch.title}</span>
+                            <span class="vsm-badge" style="font-size: 0.65rem; padding: 0.15rem 0.55rem; border-radius: 6px; background: rgba(0, 210, 255, 0.18); color: var(--vsm-cyan); border: 1px solid rgba(0, 210, 255, 0.4); font-weight: 700;">${ch.speed || 350} км/ч • Ур. ${ch.difficulty_level || 1}</span>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #94a3b8; line-height: 1.4; display: block;">${ch.situation_text ? ch.situation_text.slice(0, 110) + '...' : ''}</span>
+                    </div>
+                    <a href="/endless/?challenge_id=${ch.id}" class="vsm-btn vsm-btn-primary" style="padding: 0.45rem 0.95rem; font-size: 0.78rem; white-space: nowrap; flex-shrink: 0; background: var(--vsm-primary); border-color: var(--vsm-cyan);">
+                        <i data-lucide="zap" style="width: 14px; height: 14px;"></i>
+                        <span>В карусель</span>
+                    </a>
+                `;
+                challengesBox.appendChild(item);
+            });
+        }
+    }
+
+    // Подсказка по уровню
+    const tipBox = document.getElementById('st-modal-level-tip');
+    if (st.is_unlocked) {
+        tipBox.innerHTML = `
+            <i data-lucide="award" style="width: 20px; height: 20px; color: #10b981; flex-shrink: 0;"></i>
+            <span>Ваш ранг проводника позволяет обслуживать рейсы на данном скоростном участке. Поддерживайте высокий уровень лояльности и безопасности!</span>
+        `;
+    } else {
+        const levelsToGo = st.required_level - conductorCurrentLevel;
+        tipBox.innerHTML = `
+            <i data-lucide="lock" style="width: 20px; height: 20px; color: #f59e0b; flex-shrink: 0;"></i>
+            <span>Станция откроется по достижении <strong>${st.required_level} уровня</strong> (осталось уровней: ${levelsToGo}). Решайте сценарии и крутите карусель решений для набора XP!</span>
+        `;
+    }
+
+    modal.style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+}
+
+function closeStationModal() {
+    const modal = document.getElementById('vsm-station-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Закрытие по клику вне модалки и клавише Esc
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeStationModal();
+});
+
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('vsm-station-modal');
+    if (modal && e.target === modal) {
+        closeStationModal();
+    }
+});
+
+function selectTrainingTrack(track) {
+    if (window.vsmAudio) window.vsmAudio.playClick();
+    fetch('/api/v1/profile/training-track/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': (typeof getCookie === 'function') ? (getCookie('csrftoken') || '') : ''
+        },
+        body: JSON.stringify({ training_track: track })
+    })
+    .then(r => r.json())
+    .then(data => {
+        window.location.href = `?track=${track}`;
+    })
+    .catch(() => {
+        window.location.href = `?track=${track}`;
+    });
+}
+</script>
+{% endblock %}

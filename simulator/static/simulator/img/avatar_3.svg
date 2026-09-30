@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#bg3)" stroke="#38bdf8" stroke-width="2"/>
+  <!-- Face & Hair -->
+  <circle cx="60" cy="46" r="19" fill="#fed7aa"/>
+  <path d="M40 44 Q60 24 80 44 Q60 30 40 44 Z" fill="#1e293b"/>
+  <!-- Glasses -->
+  <rect x="47" y="44" width="10" height="6" rx="2" fill="none" stroke="#38bdf8" stroke-width="1.5"/>
+  <rect x="63" y="44" width="10" height="6" rx="2" fill="none" stroke="#38bdf8" stroke-width="1.5"/>
+  <line x1="57" y1="47" x2="63" y2="47" stroke="#38bdf8" stroke-width="1.5"/>
+  <!-- Uniform -->
+  <path d="M26 102 Q32 72 60 72 Q88 72 94 102 Z" fill="#071938"/>
+  <polygon points="52,72 68,72 64,88 56,88" fill="#ffffff"/>
+  <polygon points="57,74 63,74 65,96 60,102 55,96" fill="#082a99"/>
+  <!-- Instructor Stripes on Shoulder -->
+  <rect x="30" y="84" width="8" height="3" fill="#eab308"/>
+  <rect x="30" y="89" width="8" height="3" fill="#eab308"/>
+  <rect x="30" y="94" width="8" height="3" fill="#eab308"/>
+</svg>

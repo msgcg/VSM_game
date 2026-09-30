@@ -1,0 +1,533 @@
+{% extends 'simulator/base.html' %}
+{% load static %}
+
+{% block title %}Регистрация проводника ВСМ | «Белый кречет»{% endblock %}
+
+{% block content %}
+<div style="max-width: 780px; margin: 1rem auto 3rem;">
+
+    <!-- Заголовок страницы -->
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <div class="vsm-hero-badge" style="display: inline-flex; margin-bottom: 0.75rem;">
+            <i data-lucide="shield-plus" style="width: 14px; height: 14px;"></i>
+            <span>Кадровый реестр экипажей ВСМ-1</span>
+        </div>
+        <h1 style="font-size: 2rem; font-weight: 900; color: #ffffff; text-transform: uppercase; line-height: 1.2;">
+            Регистрация проводника ВСМ
+        </h1>
+        <p style="font-size: 0.95rem; color: #94a3b8; max-width: 580px; margin: 0.5rem auto 0;">
+            Создайте служебный профиль для допуска к тренажеру нештатных ситуаций, бесконечной карусели и участию в общесетевом рейтинге.
+        </p>
+    </div>
+
+    <!-- Основная карточка формы -->
+    <div class="vsm-card" style="padding: 2.25rem; border-color: rgba(0, 210, 255, 0.35); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(8, 42, 153, 0.25);">
+        
+        <form method="post" action="{% url 'simulator:register' %}" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #fca5a5; padding: 0.85rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.88rem; font-weight: 600;">
+                {% for err in form.non_field_errors %}
+                <div>• {{ err }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Выбор аватара -->
+            <div style="margin-bottom: 2rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
+                    1. Выберите служебный аватар проводника:
+                </label>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(115px, 1fr)); gap: 0.75rem;">
+                    {% for val, label in form.fields.avatar.choices %}
+                    <label class="vsm-avatar-card" style="cursor: pointer; position: relative;">
+                        <input type="radio" name="avatar" value="{{ val }}" {% if form.avatar.value == val or forloop.first and not form.avatar.value %}checked{% endif %} style="position: absolute; opacity: 0; pointer-events: none;">
+                        <div class="vsm-avatar-box" style="background: rgba(255, 255, 255, 0.03); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 0.85rem 0.5rem; text-align: center; transition: all 0.25s ease;">
+                            <img src="{% static 'simulator/img/' %}{{ val }}" alt="{{ label }}" style="width: 52px; height: 52px; border-radius: 50%; margin: 0 auto 0.5rem; display: block; border: 2px solid rgba(255, 255, 255, 0.2);">
+                            <div style="font-size: 0.72rem; color: #cbd5e1; font-weight: 600; line-height: 1.2;">{{ label|truncatechars:22 }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% if form.avatar.errors %}
+                <div style="color: #ef4444; font-size: 0.78rem; margin-top: 0.4rem;">{{ form.avatar.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Основные учетные данные -->
+            <div style="margin-bottom: 1.75rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
+                    2. Персональные данные и депо:
+                </label>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                    <div>
+                        <label style="font-size: 0.78rem; color: #94a3b8; font-weight: 700; margin-bottom: 0.35rem; display: block;">
+                            Логин проводника (системный) <span style="color: #fd033a;">*</span>
+                        </label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                        <div style="color: #ef4444; font-size: 0.78rem; margin-top: 0.3rem;">{{ form.username.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label style="font-size: 0.78rem; color: #94a3b8; font-weight: 700; margin-bottom: 0.35rem; display: block;">
+                            ФИО сотрудника полностью <span style="color: #fd033a;">*</span>
+                        </label>
+                        {{ form.full_name }}
+                        {% if form.full_name.errors %}
+                        <div style="color: #ef4444; font-size: 0.78rem; margin-top: 0.3rem;">{{ form.full_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1rem;">
+                    <div>
+                        <label style="font-size: 0.78rem; color: #94a3b8; font-weight: 700; margin-bottom: 0.35rem; display: block;">
+                            Депо приписки <span style="color: #fd033a;">*</span>
+                        </label>
+                        {{ form.depot }}
+                        {% if form.depot.errors %}
+                        <div style="color: #ef4444; font-size: 0.78rem; margin-top: 0.3rem;">{{ form.depot.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label style="font-size: 0.78rem; color: #94a3b8; font-weight: 700; margin-bottom: 0.35rem; display: block;">
+                            Электронная почта
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <div style="color: #ef4444; font-size: 0.78rem; margin-top: 0.3rem;">{{ form.email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Пароль -->
+            <div style="margin-bottom: 2rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
+                    3. Безопасность учетной записи:
+                </label>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                    <div>
+                        <label style="font-size: 0.78rem; color: #94a3b8; font-weight: 700; margin-bottom: 0.35rem; display: block;">
+                            Пароль (от 6 символов) <span style="color: #fd033a;">*</span>
+                        </label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                        <div style="color: #ef4444; font-size: 0.78rem; margin-top: 0.3rem;">{{ form.password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label style="font-size: 0.78rem; color: #94a3b8; font-weight: 700; margin-bottom: 0.35rem; display: block;">
+                            Повторите пароль <span style="color: #fd033a;">*</span>
+                        </label>
+                        {{ form.password_confirm }}
+                        {% if form.password_confirm.errors %}
+                        <div style="color: #ef4444; font-size: 0.78rem; margin-top: 0.3rem;">{{ form.password_confirm.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Персональный ключ ИИ-ассистента -->
+            <div style="margin-bottom: 2rem; background: rgba(33, 160, 56, 0.06); border: 1px solid rgba(33, 160, 56, 0.25); border-radius: 14px; padding: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 800; color: #4ade80; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10.5" stroke="#4ade80" stroke-width="2.2"/>
+                            <path d="M7 12L10.5 15.5L17 9" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>4. Личный ключ диалогового ИИ (интерактивный диалог с пассажирами):</span>
+                    </label>
+                    <span style="font-size: 0.72rem; color: #94a3b8; background: rgba(255, 255, 255, 0.06); padding: 0.2rem 0.5rem; border-radius: 6px;">
+                        Необязательно сейчас
+                    </span>
+                </div>
+
+                <div style="font-size: 0.82rem; color: #cbd5e1; margin-bottom: 0.75rem; line-height: 1.4;">
+                    Каждый проводник экипажа ВСМ может подключить персональный ключ разработчика. Это обеспечивает персональное судейство регламентов и неограниченный интерактивный диалог с пассажирами.
+                </div>
+
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700;">Данные подключения API нейросети:</span>
+                        <span id="key-validation-hint" style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">Проверка выполняется автоматически при вводе</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem; margin-bottom: 0.75rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.74rem; color: #94a3b8; font-weight: 700; margin-bottom: 0.25rem;">
+                                Client ID (Идентификатор клиента):
+                            </label>
+                            <div style="position: relative;">
+                                {{ form.sber_client_id }}
+                            </div>
+                            {% if form.sber_client_id.errors %}
+                            <div style="color: #ef4444; font-size: 0.76rem; margin-top: 0.25rem;">{{ form.sber_client_id.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-size: 0.74rem; color: #94a3b8; font-weight: 700; margin-bottom: 0.25rem;">
+                                Client Secret (Секрет клиента):
+                            </label>
+                            <div style="position: relative;">
+                                {{ form.sber_client_secret }}
+                            </div>
+                            {% if form.sber_client_secret.errors %}
+                            <div style="color: #ef4444; font-size: 0.76rem; margin-top: 0.25rem;">{{ form.sber_client_secret.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.6rem; align-items: center; justify-content: flex-end;">
+                        <div id="key-spinner" style="display: none; align-items: center; gap: 0.4rem; color: #38bdf8; font-size: 0.78rem;">
+                            <svg class="vsm-audio-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5">
+                                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                            </svg>
+                            <span>Связь со шлюзом ИИ...</span>
+                        </div>
+                        <button type="button" id="btn-check-sber-key" class="vsm-btn" style="padding: 0.55rem 1.25rem; font-size: 0.82rem; font-weight: 800; background: rgba(34, 197, 94, 0.15); border: 1.5px solid rgba(34, 197, 94, 0.45); color: #4ade80; border-radius: 10px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.2s ease;">
+                            <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
+                            <span id="btn-check-text">Проверить ключи</span>
+                        </button>
+                    </div>
+
+                    <!-- Интерактивный статус проверки ключа на месте -->
+                    <div id="sber-key-status" style="display: none; margin-top: 0.65rem; border-radius: 10px; padding: 0.75rem 1rem; font-size: 0.82rem; line-height: 1.45; transition: all 0.25s ease;"></div>
+                </div>
+
+                <!-- Пошаговая инструкция по получению ключа -->
+                <div style="margin-top: 1rem; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 1rem;">
+                    <div style="font-size: 0.78rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                        <span>Как бесплатно получить ключи API за 1 минуту:</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; font-size: 0.76rem; color: #cbd5e1;">
+                        <div style="background: rgba(255, 255, 255, 0.03); border-radius: 8px; padding: 0.6rem 0.75rem; border: 1px solid rgba(255, 255, 255, 0.05);">
+                            <div style="color: #4ade80; font-weight: 800; margin-bottom: 0.2rem;">Шаг 1: Вход</div>
+                            Перейдите на портал разработчика ИИ и авторизуйтесь со своей учетной записью.
+                        </div>
+
+                        <div style="background: rgba(255, 255, 255, 0.03); border-radius: 8px; padding: 0.6rem 0.75rem; border: 1px solid rgba(255, 255, 255, 0.05);">
+                            <div style="color: #4ade80; font-weight: 800; margin-bottom: 0.2rem;">Шаг 2: Создать проект</div>
+                            Нажмите <strong>«Создать проект»</strong> в кабинете разработчика.
+                        </div>
+
+                        <div style="background: rgba(255, 255, 255, 0.03); border-radius: 8px; padding: 0.6rem 0.75rem; border: 1px solid rgba(255, 255, 255, 0.05);">
+                            <div style="color: #4ade80; font-weight: 800; margin-bottom: 0.2rem;">Шаг 3: Сервис диалогового ИИ</div>
+                            В проекте нажмите <strong>«+ Подключить сервис»</strong> и выберите диалоговую модель.
+                        </div>
+
+                        <div style="background: rgba(255, 255, 255, 0.03); border-radius: 8px; padding: 0.6rem 0.75rem; border: 1px solid rgba(255, 255, 255, 0.05);">
+                            <div style="color: #4ade80; font-weight: 800; margin-bottom: 0.2rem;">Шаг 4: Скопировать ключи</div>
+                            В разделе ключей скопируйте <strong>Client ID</strong> и <strong>Client Secret</strong> (или авторизационную строку Base64) и вставьте в форму.
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 0.6rem; font-size: 0.72rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="info" style="width: 14px; height: 14px; color: var(--vsm-cyan); flex-shrink: 0;"></i>
+                        <span><em>Примечание: Вы также можете ввести или обновить ключ в любое время в личном кабинете проводника.</em></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Кнопка отправки -->
+            <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center; margin-top: 2rem; border-top: 1px solid var(--vsm-border); padding-top: 1.75rem;">
+                <button type="submit" class="vsm-btn vsm-btn-primary" style="width: 100%; padding: 0.95rem; font-size: 1.05rem; font-weight: 800; justify-content: center; box-shadow: 0 0 25px rgba(8, 42, 153, 0.5);">
+                    <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
+                    <span>Завершить регистрацию и заступить в экипаж</span>
+                </button>
+
+                <div style="font-size: 0.85rem; color: #94a3b8;">
+                    Уже есть служебный аккаунт? 
+                    <a href="{% url 'simulator:login' %}" style="color: var(--vsm-cyan); font-weight: 700; text-decoration: none;">
+                        Войти в систему
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Интерактивная подсветка выбранного аватара
+document.querySelectorAll('.vsm-avatar-card').forEach(card => {
+    const radio = card.querySelector('input[type="radio"]');
+    const box = card.querySelector('.vsm-avatar-box');
+
+    function updateHighlight() {
+        document.querySelectorAll('.vsm-avatar-box').forEach(b => {
+            b.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            b.style.background = 'rgba(255, 255, 255, 0.03)';
+            b.style.boxShadow = 'none';
+        });
+        if (radio.checked) {
+            box.style.borderColor = 'var(--vsm-cyan)';
+            box.style.background = 'rgba(0, 210, 255, 0.15)';
+            box.style.boxShadow = '0 0 15px rgba(0, 210, 255, 0.35)';
+        }
+    }
+
+    radio.addEventListener('change', updateHighlight);
+    if (radio.checked) updateHighlight();
+});
+
+// Проверка учетных данных ИИ (Client ID + Client Secret) на месте при вводе
+(function() {
+    const idInput = document.querySelector('input[name="sber_client_id"]');
+    const secretInput = document.querySelector('input[name="sber_client_secret"]');
+    const checkBtn = document.getElementById('btn-check-sber-key');
+    const checkText = document.getElementById('btn-check-text');
+    const statusBox = document.getElementById('sber-key-status');
+    const spinner = document.getElementById('key-spinner');
+    const hint = document.getElementById('key-validation-hint');
+    let debounceTimer = null;
+    let lastCheckedPair = '';
+
+    if (!idInput || !secretInput || !statusBox) return;
+
+    function resetStatus() {
+        statusBox.style.display = 'none';
+        statusBox.innerHTML = '';
+        idInput.style.borderColor = '';
+        idInput.style.boxShadow = '';
+        secretInput.style.borderColor = '';
+        secretInput.style.boxShadow = '';
+        if (checkText) checkText.textContent = 'Проверить ключи';
+        if (checkBtn) {
+            checkBtn.style.background = 'rgba(34, 197, 94, 0.15)';
+            checkBtn.style.borderColor = 'rgba(34, 197, 94, 0.45)';
+            checkBtn.style.color = '#4ade80';
+        }
+        if (hint) {
+            hint.textContent = 'Проверка выполняется автоматически при вводе';
+            hint.style.color = '#94a3b8';
+        }
+    }
+
+    function trySplitBase64(inputVal) {
+        if (!inputVal) return false;
+        const trimmed = inputVal.trim();
+        try {
+            const decoded = atob(trimmed);
+            if (decoded && decoded.includes(':')) {
+                const parts = decoded.split(':');
+                if (parts[0] && parts[1]) {
+                    idInput.value = parts[0];
+                    secretInput.value = parts.slice(1).join(':');
+                    return true;
+                }
+            }
+        } catch (e) {
+            // Not base64
+        }
+        return false;
+    }
+
+    async function verifyKeyNow() {
+        let clientId = idInput.value.trim();
+        let clientSecret = secretInput.value.trim();
+
+        // Проверяем, не вставлен ли Base64 в одно из полей
+        if (clientId && !clientSecret) {
+            if (trySplitBase64(clientId)) {
+                clientId = idInput.value.trim();
+                clientSecret = secretInput.value.trim();
+            }
+        } else if (clientSecret && !clientId) {
+            if (trySplitBase64(clientSecret)) {
+                clientId = idInput.value.trim();
+                clientSecret = secretInput.value.trim();
+            }
+        }
+
+        if (!clientId && !clientSecret) {
+            resetStatus();
+            return;
+        }
+
+        if (!clientId || !clientSecret) {
+            if (hint) {
+                hint.textContent = 'Заполните оба поля (Client ID и Client Secret)';
+                hint.style.color = '#f59e0b';
+            }
+            return;
+        }
+
+        const currentPair = `${clientId}:::${clientSecret}`;
+        if (currentPair === lastCheckedPair && statusBox.style.display !== 'none') {
+            return;
+        }
+
+        // Показываем состояние проверки
+        if (spinner) spinner.style.display = 'inline-flex';
+        if (checkBtn) checkBtn.disabled = true;
+        if (checkText) checkText.textContent = 'Проверка...';
+
+        statusBox.style.display = 'block';
+        statusBox.style.background = 'rgba(56, 189, 248, 0.1)';
+        statusBox.style.border = '1px solid rgba(56, 189, 248, 0.4)';
+        statusBox.style.color = '#7dd3fc';
+        statusBox.innerHTML = '<div style="display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="loader" class="vsm-spin" style="width: 16px; height: 16px;"></i> <span>Подключение к шлюзу ИИ... Запрос сессионного токена...</span></div>';
+        if (window.lucide) window.lucide.createIcons();
+
+        try {
+            const resp = await fetch('{% url "simulator:api_verify_sber_key" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    client_id: clientId,
+                    client_secret: clientSecret
+                })
+            });
+            const data = await resp.json();
+            lastCheckedPair = currentPair;
+
+            if (resp.ok && data.ok) {
+                // Если шлюз вернул распознанные id и secret, синхронизируем поля
+                if (data.client_id && !idInput.value.trim()) idInput.value = data.client_id;
+                if (data.client_secret && !secretInput.value.trim()) secretInput.value = data.client_secret;
+
+                idInput.style.borderColor = '#22c55e';
+                idInput.style.boxShadow = '0 0 12px rgba(34, 197, 94, 0.3)';
+                secretInput.style.borderColor = '#22c55e';
+                secretInput.style.boxShadow = '0 0 12px rgba(34, 197, 94, 0.3)';
+
+                statusBox.style.background = 'rgba(34, 197, 94, 0.12)';
+                statusBox.style.border = '1.5px solid rgba(34, 197, 94, 0.5)';
+                statusBox.style.color = '#4ade80';
+
+                let detail = '';
+                if (data.expires_text) {
+                    detail = ` <span style="color: #cbd5e1; font-size: 0.76rem;">(Сессионный токен доступа получен, активен до ${data.expires_text})</span>`;
+                }
+                statusBox.innerHTML = `
+                    <div style="font-weight: 800; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem;">
+                        <i data-lucide="check-circle-2" style="width: 18px; height: 18px; color: #4ade80;"></i> <span>Учетные данные ИИ успешно подтверждены!</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: #e2e8f0;">
+                        Шлюз успешно авторизовал доступ. В симуляторе для вас будет включен живой интерактивный диалог с пассажирами.${detail}
+                    </div>
+                `;
+
+                if (checkBtn) {
+                    checkBtn.style.background = '#15803d';
+                    checkBtn.style.borderColor = '#22c55e';
+                    checkBtn.style.color = '#ffffff';
+                }
+                if (checkText) checkText.textContent = 'Проверено';
+                if (hint) {
+                    hint.textContent = 'Доступ к модели ИИ подтвержден';
+                    hint.style.color = '#4ade80';
+                }
+            } else {
+                idInput.style.borderColor = '#ef4444';
+                idInput.style.boxShadow = '0 0 12px rgba(239, 68, 68, 0.3)';
+                secretInput.style.borderColor = '#ef4444';
+                secretInput.style.boxShadow = '0 0 12px rgba(239, 68, 68, 0.3)';
+
+                statusBox.style.background = 'rgba(239, 68, 68, 0.12)';
+                statusBox.style.border = '1.5px solid rgba(239, 68, 68, 0.5)';
+                statusBox.style.color = '#fca5a5';
+
+                const errMsg = data.error || 'Шлюз отклонил учетные данные.';
+                statusBox.innerHTML = `
+                    <div style="font-weight: 800; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem;">
+                        <i data-lucide="alert-circle" style="width: 18px; height: 18px; color: #ef4444;"></i> <span>Ошибка авторизации ИИ</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: #fecaca;">
+                        ${errMsg}
+                    </div>
+                    <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 0.35rem;">
+                        Проверьте, что в поле <strong>Client ID</strong> введен идентификатор клиента, а в поле <strong>Client Secret</strong> — секретный ключ из вашего проекта.
+                    </div>
+                `;
+
+                if (checkBtn) {
+                    checkBtn.style.background = 'rgba(239, 68, 68, 0.2)';
+                    checkBtn.style.borderColor = '#ef4444';
+                    checkBtn.style.color = '#fca5a5';
+                }
+                if (checkText) checkText.textContent = 'Ошибка';
+                if (hint) {
+                    hint.textContent = 'Ошибка проверки данных';
+                    hint.style.color = '#ef4444';
+                }
+            }
+        } catch (err) {
+            statusBox.style.background = 'rgba(245, 158, 11, 0.12)';
+            statusBox.style.border = '1.5px solid rgba(245, 158, 11, 0.5)';
+            statusBox.style.color = '#fcd34d';
+            statusBox.innerHTML = `<div style="display: flex; align-items: center; gap: 0.4rem;"><i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: #f59e0b; flex-shrink: 0;"></i> <span>Не удалось связаться с сервером проверки: ${err.message || err}</span></div>`;
+            if (checkText) checkText.textContent = 'Повторить';
+        } finally {
+            if (spinner) spinner.style.display = 'none';
+            if (checkBtn) checkBtn.disabled = false;
+            if (window.lucide) window.lucide.createIcons();
+        }
+    }
+
+    function setupInputEvents(inputEl) {
+        inputEl.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            if (!idInput.value.trim() && !secretInput.value.trim()) {
+                resetStatus();
+                return;
+            }
+            if (hint) {
+                hint.textContent = 'Ожидание ввода данных...';
+                hint.style.color = '#94a3b8';
+            }
+            debounceTimer = setTimeout(verifyKeyNow, 600);
+        });
+
+        inputEl.addEventListener('paste', function() {
+            clearTimeout(debounceTimer);
+            setTimeout(() => {
+                trySplitBase64(inputEl.value);
+                verifyKeyNow();
+            }, 120);
+        });
+
+        inputEl.addEventListener('blur', function() {
+            const currentPair = `${idInput.value.trim()}:::${secretInput.value.trim()}`;
+            if (idInput.value.trim() && secretInput.value.trim() && currentPair !== lastCheckedPair) {
+                clearTimeout(debounceTimer);
+                verifyKeyNow();
+            }
+        });
+    }
+
+    setupInputEvents(idInput);
+    setupInputEvents(secretInput);
+
+    if (checkBtn) {
+        checkBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            clearTimeout(debounceTimer);
+            verifyKeyNow();
+        });
+    }
+
+    // Если оба поля уже заполнены при загрузке
+    if (idInput.value.trim() && secretInput.value.trim()) {
+        verifyKeyNow();
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <defs>
+    <linearGradient id="pbg_sick" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7f1d1d"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="p_skin_sick" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e2e8f0"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+  </defs>
+  <!-- Background with pulsing red warning border -->
+  <circle cx="80" cy="80" r="76" fill="url(#pbg_sick)" stroke="#fd033a" stroke-width="2.5"/>
+
+  <!-- Shoulders (slumped / in pain) -->
+  <path d="M30 155 Q45 116 80 116 Q115 116 130 155 Z" fill="#1e293b"/>
+  
+  <!-- Hand clutching chest / heart area -->
+  <ellipse cx="68" cy="132" rx="14" ry="10" fill="#cbd5e1" transform="rotate(-20 68 132)"/>
+  <rect x="58" y="126" width="6" height="12" rx="2" fill="#94a3b8" transform="rotate(-15 61 132)"/>
+  <rect x="66" y="124" width="6" height="14" rx="2" fill="#94a3b8" transform="rotate(-15 69 131)"/>
+  <rect x="74" y="125" width="6" height="12" rx="2" fill="#94a3b8" transform="rotate(-15 77 131)"/>
+
+  <!-- Neck -->
+  <rect x="72" y="84" width="16" height="22" rx="3" fill="#cbd5e1"/>
+
+  <!-- Head / Pale Face -->
+  <ellipse cx="80" cy="62" rx="24" ry="29" fill="url(#p_skin_sick)"/>
+
+  <!-- Disheveled Hair -->
+  <path d="M54 52 Q60 30 78 28 Q100 28 106 48 Q94 36 80 36 Q62 36 54 52 Z" fill="#334155"/>
+  <path d="M52 48 Q64 42 74 46" stroke="#334155" stroke-width="2.5" fill="none"/>
+
+  <!-- Sweat drops on forehead -->
+  <path d="M60 42 Q63 46 60 48 Q57 46 60 42 Z" fill="#38bdf8"/>
+  <path d="M98 44 Q101 48 98 50 Q95 48 98 44 Z" fill="#38bdf8"/>
+
+  <!-- Pain Eyebrows (tilted up inward) -->
+  <path d="M64 54 L76 49" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M96 54 L84 49" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Eyes squeezed in distress / closed -->
+  <path d="M64 60 Q70 56 76 60" stroke="#0f172a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M84 60 Q90 56 96 60" stroke="#0f172a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Nose -->
+  <path d="M80 58 L77 67 L82 67" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Open mouth gasping for air -->
+  <ellipse cx="80" cy="76" rx="7" ry="5" fill="#475569" stroke="#94a3b8" stroke-width="1.5"/>
+
+  <!-- Red Cross badge / Medical icon in corner -->
+  <circle cx="120" cy="38" r="14" fill="#fd033a" stroke="#ffffff" stroke-width="2"/>
+  <rect x="117" y="30" width="6" height="16" fill="#ffffff"/>
+  <rect x="112" y="35" width="16" height="6" fill="#ffffff"/>
+</svg>

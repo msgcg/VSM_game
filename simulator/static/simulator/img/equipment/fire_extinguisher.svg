@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="feCylinder" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#b91c1c"/>
+      <stop offset="35%" stop-color="#ef4444"/>
+      <stop offset="70%" stop-color="#dc2626"/>
+      <stop offset="100%" stop-color="#7f1d1d"/>
+    </linearGradient>
+    <linearGradient id="feMetal" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="50%" stop-color="#cbd5e1"/>
+      <stop offset="100%" stop-color="#475569"/>
+    </linearGradient>
+    <filter id="feGlow">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#ef4444" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Баллон огнетушителя -->
+  <g filter="url(#feGlow)">
+    <!-- Скругленная верхушка -->
+    <path d="M44 42 C44 32 76 32 76 42 L76 96 C76 102 44 102 44 96 Z" fill="url(#feCylinder)"/>
+    <rect x="42" y="96" width="36" height="5" rx="2.5" fill="#1e293b"/>
+  </g>
+
+  <!-- Белая информационная наклейка ОВП-8 СПАС-ВО -->
+  <rect x="47" y="52" width="26" height="34" rx="3" fill="#ffffff" stroke="#e2e8f0" stroke-width="0.8"/>
+  <rect x="47" y="52" width="26" height="7" rx="2" fill="#082a99"/>
+  <text x="60" y="57.5" fill="#ffffff" font-size="4.2" font-weight="900" font-family="Montserrat, sans-serif" text-anchor="middle">ОВП-8</text>
+  <text x="60" y="66" fill="#0f172a" font-size="3.5" font-weight="800" font-family="Montserrat, sans-serif" text-anchor="middle">СПАС-ВО</text>
+  <!-- Значки классов пожаров A, B -->
+  <rect x="50" y="70" width="8" height="8" rx="1.5" fill="#0284c7"/>
+  <text x="54" y="76" fill="#fff" font-size="5" font-weight="900" text-anchor="middle">A</text>
+  <rect x="62" y="70" width="8" height="8" rx="1.5" fill="#0284c7"/>
+  <text x="66" y="76" fill="#fff" font-size="5" font-weight="900" text-anchor="middle">B</text>
+
+  <!-- Горловина и пусковой рычаг -->
+  <rect x="56" y="27" width="8" height="8" fill="url(#feMetal)"/>
+  
+  <!-- Запорно-пусковая рукоятка -->
+  <path d="M54 26 L74 21 C76 20 78 22 76 24 L56 29 Z" fill="url(#feMetal)"/>
+  <path d="M54 29 L74 34 C76 35 78 33 76 31 L56 29 Z" fill="url(#feMetal)"/>
+
+  <!-- Манометр давления (зеленая шкала) -->
+  <circle cx="50" cy="28" r="5" fill="#0f172a" stroke="#cbd5e1" stroke-width="1"/>
+  <path d="M48 28 A2 2 0 0 1 52 28" fill="none" stroke="#22c55e" stroke-width="1.5"/>
+  <circle cx="50" cy="28" r="1" fill="#fff"/>
+
+  <!-- Шланг с раструбом -->
+  <path d="M64 30 Q84 32 82 52 T76 80" fill="none" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Раструб -->
+  <polygon points="76,77 82,88 72,88" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+
+  <!-- Чека с кольцом -->
+  <circle cx="68" cy="26" r="3.5" fill="none" stroke="#facc15" stroke-width="1.5"/>
+</svg>

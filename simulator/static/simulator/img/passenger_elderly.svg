@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <defs>
+    <linearGradient id="pbg_eld" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14532d"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="p_skin_eld" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fed7aa"/>
+      <stop offset="100%" stop-color="#fcd34d"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="76" fill="url(#pbg_eld)" stroke="#34d399" stroke-width="2.5"/>
+
+  <!-- Shoulders & Cardigan / Tweed jacket -->
+  <path d="M30 155 Q42 108 80 108 Q118 108 130 155 Z" fill="#334155"/>
+  <polygon points="68,108 80,122 92,108" fill="#e2e8f0"/>
+  <polygon points="76,120 84,120 82,148 78,148" fill="#0369a1"/>
+
+  <!-- Neck -->
+  <rect x="72" y="82" width="16" height="24" rx="3" fill="#fcd34d"/>
+
+  <!-- Head / Face -->
+  <ellipse cx="80" cy="62" rx="24" ry="29" fill="url(#p_skin_eld)"/>
+
+  <!-- Grey hair and balding front -->
+  <path d="M54 55 Q48 35 70 32 Q90 32 106 35 Q106 48 106 58 Q103 40 80 38 Q58 40 54 55 Z" fill="#cbd5e1"/>
+  <ellipse cx="53" cy="58" rx="5" ry="12" fill="#94a3b8"/>
+  <ellipse cx="107" cy="58" rx="5" ry="12" fill="#94a3b8"/>
+
+  <!-- Forehead wrinkles -->
+  <path d="M70 42 Q80 40 90 42" stroke="#d97706" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  <path d="M72 46 Q80 44 88 46" stroke="#d97706" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+
+  <!-- Round Glasses (Classic intellectual spectacles) -->
+  <circle cx="68" cy="58" r="9" fill="rgba(255,255,255,0.25)" stroke="#fbbf24" stroke-width="2"/>
+  <circle cx="92" cy="58" r="9" fill="rgba(255,255,255,0.25)" stroke="#fbbf24" stroke-width="2"/>
+  <line x1="77" y1="58" x2="83" y2="58" stroke="#fbbf24" stroke-width="2"/>
+
+  <!-- Eyes behind glasses -->
+  <circle cx="68" cy="58" r="2.5" fill="#1e293b"/>
+  <circle cx="92" cy="58" r="2.5" fill="#1e293b"/>
+
+  <!-- Eyebrows (Bushy grey) -->
+  <path d="M60 49 Q68 46 76 49" stroke="#94a3b8" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M84 49 Q92 46 100 49" stroke="#94a3b8" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+  <!-- Nose -->
+  <path d="M80 57 L78 68 L83 68" stroke="#d97706" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Grey Moustache -->
+  <path d="M66 74 Q74 71 80 75 Q86 71 94 74 Q80 80 66 74 Z" fill="#cbd5e1"/>
+
+  <!-- Mouth -->
+  <path d="M73 80 Q80 82 87 80" stroke="#b45309" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Glow Accent -->
+  <circle cx="80" cy="80" r="74" fill="none" stroke="rgba(52, 211, 153, 0.4)" stroke-width="1.5"/>
+</svg>

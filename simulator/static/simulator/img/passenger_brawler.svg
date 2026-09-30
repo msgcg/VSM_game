@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <defs>
+    <linearGradient id="pbg_brawl" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#450a0a"/>
+      <stop offset="50%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="p_skin_brawl" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fecdd3"/>
+      <stop offset="100%" stop-color="#fca5a5"/>
+    </linearGradient>
+    <linearGradient id="p_shirt_brawl" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+  <!-- Background with warning border -->
+  <circle cx="80" cy="80" r="76" fill="url(#pbg_brawl)" stroke="#f97316" stroke-width="2.5"/>
+  
+  <!-- Shoulders & Unbuttoned Shirt -->
+  <path d="M28 155 Q42 108 80 108 Q118 108 132 155 Z" fill="url(#p_shirt_brawl)"/>
+  
+  <!-- Disheveled open shirt collar -->
+  <polygon points="62,108 72,130 80,114" fill="#cbd5e1"/>
+  <polygon points="98,108 88,130 80,114" fill="#94a3b8"/>
+  <polygon points="72,112 80,126 88,112" fill="#fca5a5"/>
+
+  <!-- Neck -->
+  <rect x="71" y="82" width="18" height="24" rx="3" fill="#fca5a5"/>
+
+  <!-- Head / Face with flushed cheeks -->
+  <ellipse cx="80" cy="62" rx="25" ry="29" fill="url(#p_skin_brawl)"/>
+
+  <!-- Red intoxication flush on cheeks and nose -->
+  <ellipse cx="66" cy="67" rx="8" ry="5" fill="#f43f5e" opacity="0.45"/>
+  <ellipse cx="94" cy="67" rx="8" ry="5" fill="#f43f5e" opacity="0.45"/>
+  <ellipse cx="80" cy="65" rx="5" ry="4" fill="#f43f5e" opacity="0.55"/>
+
+  <!-- Disheveled, messy hair -->
+  <path d="M52 50 Q56 26 80 26 Q104 26 108 48 Q98 34 86 34 Q70 34 58 44 Z" fill="#292524"/>
+  <path d="M50 48 Q44 64 50 72 Q54 58 54 50 Z" fill="#292524"/>
+  <path d="M108 48 Q114 62 108 72 Q104 58 104 50 Z" fill="#292524"/>
+  <!-- Stray hairs -->
+  <path d="M72 26 Q74 16 82 22" stroke="#292524" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M84 25 Q92 18 96 26" stroke="#292524" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Ears -->
+  <ellipse cx="53" cy="63" rx="4" ry="7" fill="#fba76a"/>
+  <ellipse cx="107" cy="63" rx="4" ry="7" fill="#fba76a"/>
+
+  <!-- Slanted angry/agitated eyebrows -->
+  <path d="M62 48 L76 54" stroke="#1c1917" stroke-width="3" stroke-linecap="round"/>
+  <path d="M98 48 L84 54" stroke="#1c1917" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Narrowed, irritated eyes -->
+  <ellipse cx="68" cy="58" rx="4" ry="2.5" fill="#1c1917"/>
+  <ellipse cx="92" cy="58" rx="4" ry="2.5" fill="#1c1917"/>
+  <circle cx="69" cy="57" r="0.8" fill="#ffffff"/>
+  <circle cx="93" cy="57" r="0.8" fill="#ffffff"/>
+
+  <!-- Nose -->
+  <path d="M80 57 L76 66 L82 66" stroke="#be123c" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+
+  <!-- Shouting / aggressive mouth -->
+  <path d="M71 73 Q80 82 89 73 Q80 77 71 73 Z" fill="#881337" stroke="#4c0519" stroke-width="1.5"/>
+  <rect x="75" y="74" width="10" height="2.5" fill="#ffffff" rx="1"/>
+
+  <!-- Warning Badge in top corner -->
+  <circle cx="122" cy="38" r="14" fill="#f97316" stroke="#ffffff" stroke-width="2"/>
+  <path d="M122 30 L122 40" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="122" cy="44" r="1.5" fill="#ffffff"/>
+</svg>

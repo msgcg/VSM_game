@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#082a99"/>
+      <stop offset="100%" stop-color="#1c6389"/>
+    </linearGradient>
+    <linearGradient id="badge1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fd033a"/>
+      <stop offset="100%" stop-color="#ff5757"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#bg1)" stroke="#38bdf8" stroke-width="2"/>
+  <!-- Head & Hair -->
+  <circle cx="60" cy="46" r="20" fill="#fbd38d"/>
+  <path d="M42 42 Q60 20 78 42 Q60 26 42 42 Z" fill="#2d3748"/>
+  <!-- Conductor Visor Cap -->
+  <path d="M38 38 Q60 26 82 38 L84 32 Q60 22 36 32 Z" fill="#0b1329"/>
+  <rect x="42" y="34" width="36" height="4" rx="2" fill="#eab308"/>
+  <circle cx="60" cy="33" r="3" fill="#fd033a"/>
+  <!-- Torso & Uniform -->
+  <path d="M26 100 Q30 72 60 72 Q90 72 94 100 Z" fill="#0f172a"/>
+  <!-- Shirt & Tie -->
+  <polygon points="54,72 66,72 62,88 58,88" fill="#ffffff"/>
+  <polygon points="58,74 62,74 64,96 60,102 56,96" fill="url(#badge1)"/>
+  <!-- Golden wings badge on chest -->
+  <path d="M34 82 L44 82 L39 86 Z" fill="#eab308"/>
+  <!-- Border ring -->
+  <circle cx="60" cy="60" r="56" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+</svg>

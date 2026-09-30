@@ -1,0 +1,317 @@
+{% extends 'simulator/base.html' %}
+{% load static %}
+
+{% block title %}Дебрифинг рейса: {{ scenario.title }} | ВСМ «Белый кречет»{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 0 auto;">
+    <!-- Герой итога рейса -->
+    <div class="vsm-result-hero">
+        {% if session.is_success %}
+        <div class="vsm-result-grade grade-success">
+            РЕЙС УСПЕШЕН
+        </div>
+        <h1 style="font-size: 1.8rem; font-weight: 900; color: #ffffff; margin-bottom: 0.5rem;">
+            Смена успешно завершена по стандартам ВСМ!
+        </h1>
+        <p style="font-size: 0.95rem; color: #cbd5e1; max-width: 600px; margin: 0 auto 1.5rem;">
+            Вы продемонстрировали высокую выдержку, соблюдение правил безопасности движения 400 км/ч и сохранили лояльность пассажиров.
+        </p>
+        {% else %}
+        <div class="vsm-result-grade grade-fail">
+            НАРУШЕНИЕ РЕГЛАМЕНТА
+        </div>
+        <h1 style="font-size: 1.8rem; font-weight: 900; color: #ffffff; margin-bottom: 0.5rem;">
+            Ситуация вышла из-под контроля
+        </h1>
+        <p style="font-size: 0.95rem; color: #cbd5e1; max-width: 600px; margin: 0 auto 1.5rem;">
+            Допущены критические отклонения от инструкций обслуживания высокоскоростного состава. Требуется повторный разбор полетов.
+        </p>
+        {% endif %}
+
+        <!-- Итоговые баллы -->
+        <div style="display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap;">
+            <div class="vsm-stat-item" style="min-width: 140px;">
+                <div class="vsm-stat-val yellow">+{{ session.earned_xp }} XP</div>
+                <div class="vsm-stat-label">Опыт за смену</div>
+            </div>
+            <div class="vsm-stat-item" style="min-width: 140px;">
+                <div class="vsm-stat-val red">{{ session.current_loyalty }}%</div>
+                <div class="vsm-stat-label">Итоговая лояльность</div>
+            </div>
+            <div class="vsm-stat-item" style="min-width: 140px;">
+                <div class="vsm-stat-val teal">{{ session.current_safety }}%</div>
+                <div class="vsm-stat-label">Безопасность</div>
+            </div>
+            <div class="vsm-stat-item" style="min-width: 140px;">
+                <div class="vsm-stat-val">{{ session.final_score }} / 100</div>
+                <div class="vsm-stat-label">Суммарный балл</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Новые разблокированные достижения -->
+    {% if recent_achievements %}
+    <div class="vsm-card" style="margin-bottom: 2rem; border-color: #facc15; background: rgba(250, 204, 21, 0.05);">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+            <i data-lucide="crown" style="color: #facc15; width: 24px; height: 24px;"></i>
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #facc15;">
+                Поздравляем! Разблокированы новые достижения
+            </h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+            {% for ra in recent_achievements %}
+            <div style="display: flex; align-items: center; gap: 0.8rem; background: rgba(0, 0, 0, 0.4); padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid rgba(250, 204, 21, 0.2);">
+                <div style="width: 44px; height: 44px; border-radius: 10px; background: {{ ra.achievement.badge_color }}; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                    <i data-lucide="{{ ra.achievement.icon_name }}" style="width: 22px; height: 22px; color: #fff;"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.9rem; font-weight: 800; color: #fff;">{{ ra.achievement.title }}</div>
+                    <div style="font-size: 0.75rem; color: #94a3b8;">+{{ ra.achievement.xp_reward }} XP • {{ ra.achievement.get_rarity_display }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Экспертный разбор действий (Черный ящик рейса) -->
+    <div class="vsm-card" style="margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.5rem;">
+            <i data-lucide="activity" style="color: var(--vsm-cyan); width: 22px; height: 22px;"></i>
+            <h2 style="font-size: 1.3rem; font-weight: 800; color: #ffffff;">
+                Черный ящик рейса: Пошаговый разбор решений проводника
+            </h2>
+        </div>
+
+        {% if not session.is_success %}
+        <div style="background: rgba(253, 3, 58, 0.08); border-left: 4px solid #fd033a; padding: 1.25rem 1.5rem; border-radius: 0 12px 12px 0; margin-bottom: 2rem;">
+            <div style="font-size: 0.75rem; color: #f87171; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+                <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i>
+                <span>Разбор ошибки проводника и последствий инцидента</span>
+            </div>
+            <div style="font-size: 0.95rem; color: #ffffff; line-height: 1.6; margin-bottom: 0.75rem;">
+                {{ terminal_node.resolution_report|default:"Действия проводника привели к нештатному развитию ситуации или нарушению регламентов ВСМ." }}
+            </div>
+            {% if scenario.regulation_reference %}
+            <div style="font-size: 0.85rem; color: #fbbf24; margin-bottom: 0.75rem; font-weight: 600;">
+                <i data-lucide="book-marked" style="width: 14px; height: 14px; display: inline; vertical-align: -2px;"></i>
+                Нарушен регламент: {{ scenario.regulation_reference }}
+            </div>
+            {% endif %}
+            <div style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-size: 0.88rem; color: #d1fae5; line-height: 1.5;">
+                <strong>Как следовало поступить по стандарту ВСМ «Белый кречет»:</strong>
+                Ознакомьтесь с нормативами в интерактивном справочнике регламентов и повторите прохождение сценария, соблюдая протоколы деэскалации, безопасности движения и сервиса.
+            </div>
+        </div>
+        {% elif terminal_node and terminal_node.resolution_report %}
+        <div style="background: rgba(28, 99, 137, 0.15); border-left: 4px solid var(--vsm-cyan); padding: 1.25rem 1.5rem; border-radius: 0 12px 12px 0; margin-bottom: 2rem;">
+            <div style="font-size: 0.75rem; color: var(--vsm-cyan); text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+                Итоговое заключение инспектора безопасности ВСМ
+            </div>
+            <div style="font-size: 0.95rem; color: #f1f5f9; line-height: 1.6;">
+                {{ terminal_node.resolution_report }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Обучающий разбор по 4-шаговой ролевой модели ВСМ -->
+        {% if debrief and debrief.steps %}
+        <div style="background: rgba(8, 42, 153, 0.2); border: 1.5px solid rgba(0, 210, 255, 0.3); border-radius: 14px; padding: 1.25rem 1.5rem; margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="award" style="color: var(--vsm-cyan); width: 18px; height: 18px;"></i>
+                    <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff;">
+                        Обучающий разбор: 4 шага стандарта коммуникации ВСМ
+                    </h3>
+                </div>
+                <span style="font-size: 0.75rem; color: #facc15; font-weight: 700;">
+                    {{ debrief.regulation_ref }}
+                </span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.85rem; margin-bottom: 1rem;">
+                {% for st in debrief.steps %}
+                <div style="background: {% if st.status == 'passed' %}rgba(16, 185, 129, 0.08){% elif st.status == 'warning' %}rgba(245, 158, 11, 0.08){% else %}rgba(253, 3, 58, 0.08){% endif %}; border: 1px solid {% if st.status == 'passed' %}rgba(16, 185, 129, 0.3){% elif st.status == 'warning' %}rgba(245, 158, 11, 0.3){% else %}rgba(253, 3, 58, 0.3){% endif %}; border-radius: 10px; padding: 0.85rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                        <span style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: #94a3b8;">
+                            Шаг {{ st.step }}
+                        </span>
+                        {% if st.status == 'passed' %}
+                        <span style="color: #10b981; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem;">
+                            <i data-lucide="check" style="width: 12px; height: 12px;"></i>
+                            <span>Зачет</span>
+                        </span>
+                        {% elif st.status == 'warning' %}
+                        <span style="color: #f59e0b; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem;">
+                            <i data-lucide="alert-triangle" style="width: 12px; height: 12px;"></i>
+                            <span>Внимание</span>
+                        </span>
+                        {% else %}
+                        <span style="color: #fd033a; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem;">
+                            <i data-lucide="x" style="width: 12px; height: 12px;"></i>
+                            <span>Ошибка</span>
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="font-size: 0.88rem; font-weight: 800; color: #fff; margin-bottom: 0.25rem;">
+                        {{ st.name }}
+                    </div>
+                    <div style="font-size: 0.74rem; color: #cbd5e1; line-height: 1.35;">
+                        {{ st.comment }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div style="font-size: 0.82rem; color: #94a3b8; line-height: 1.45; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.75rem;">
+                <strong style="color: #fff;">Методическая рекомендация:</strong> {{ debrief.recommendation }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Ведомость замечаний по рейсу ВСМ -->
+        <div class="vsm-remarks-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="clipboard-list" style="color: var(--vsm-cyan); width: 18px; height: 18px;"></i>
+                    <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff;">
+                        Ведомость замечаний по рейсу
+                    </h3>
+                </div>
+                <span style="font-size: 0.75rem; color: #38bdf8; font-weight: 700; background: rgba(0, 210, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); padding: 0.2rem 0.6rem; border-radius: 6px;">
+                    СТО ВСМ 03.011-2026 • Аудит рейса
+                </span>
+            </div>
+
+            {% if debrief.remarks %}
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    {% for rem in debrief.remarks %}
+                    <div class="vsm-remark-item severity-{{ rem.severity }}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span class="vsm-remark-badge severity-{{ rem.severity }}">
+                                    {% if rem.severity == 'major' %}
+                                        <i data-lucide="alert-octagon" style="width: 12px; height: 12px;"></i>
+                                        <span>Грубое нарушение</span>
+                                    {% elif rem.severity == 'moderate' %}
+                                        <i data-lucide="alert-triangle" style="width: 12px; height: 12px;"></i>
+                                        <span>Замечание</span>
+                                    {% else %}
+                                        <i data-lucide="info" style="width: 12px; height: 12px;"></i>
+                                        <span>Предупреждение</span>
+                                    {% endif %}
+                                </span>
+                                <span style="font-size: 0.76rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">
+                                    {{ rem.category }}
+                                </span>
+                            </div>
+                            {% if rem.regulation_ref %}
+                            <span style="font-size: 0.72rem; color: #facc15; font-weight: 600;">
+                                <i data-lucide="book-marked" style="width: 11px; height: 11px; display: inline; vertical-align: -1px;"></i>
+                                {{ rem.regulation_ref }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 0.92rem; font-weight: 800; color: #fff; margin-bottom: 0.25rem;">
+                            {{ rem.title }}
+                        </div>
+                        <div style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.45;">
+                            {{ rem.description }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="vsm-remarks-empty">
+                    <i data-lucide="shield-check" style="width: 24px; height: 24px; flex-shrink: 0; color: #10b981;"></i>
+                    <div>
+                        <div style="font-size: 0.95rem; font-weight: 800; color: #34d399; margin-bottom: 0.15rem;">
+                            Замечаний по рейсу не зафиксировано
+                        </div>
+                        <div style="font-size: 0.8rem; color: #a7f3d0; line-height: 1.4;">
+                            Поездная смена проведена безупречно. Нормативы безопасности движения, стандарты сервиса и этикет обслуживания ВСМ выполнены в полном объеме.
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Хронология шагов -->
+        <div style="padding-left: 0.5rem;">
+            {% for item in log_items %}
+            <div class="vsm-timeline-item">
+                <div class="vsm-timeline-dot"></div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <div style="font-size: 0.95rem; font-weight: 800; color: #ffffff;">
+                        {{ item.node_title|default:"Действие" }}
+                    </div>
+                    <span style="font-size: 0.75rem; color: #64748b; font-family: monospace;">{{ item.timestamp }}</span>
+                </div>
+
+                {% if item.message %}
+                <div style="font-size: 0.88rem; color: #94a3b8; margin-bottom: 0.4rem;">
+                    {{ item.message }}
+                </div>
+                {% endif %}
+
+                {% if item.character_reply %}
+                <div style="background: rgba(255, 255, 255, 0.04); border-left: 3px solid var(--vsm-cyan); padding: 0.45rem 0.75rem; border-radius: 6px; font-size: 0.88rem; color: #f1f5f9; margin-bottom: 0.45rem;">
+                    <strong><i data-lucide="message-square" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>Реплика пассажира:</strong> {{ item.character_reply }}
+                </div>
+                {% endif %}
+
+                {% if item.conductor_input or item.action %}
+                <div style="background: rgba(0, 210, 255, 0.06); border-left: 3px solid #38bdf8; padding: 0.45rem 0.75rem; border-radius: 6px; font-size: 0.88rem; color: #cbd5e1; margin-bottom: 0.45rem;">
+                    <strong><i data-lucide="user-check" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>Решение проводника:</strong> {{ item.conductor_input|default:item.action }}
+                </div>
+                {% endif %}
+
+                {% if item.tactical_hint %}
+                <div style="font-size: 0.82rem; color: #fde047; margin-bottom: 0.5rem; font-style: italic;">
+                    <strong><i data-lucide="lightbulb" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>Разбор эксперта ВСМ:</strong> {{ item.tactical_hint }}
+                </div>
+                {% endif %}
+
+                <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; font-size: 0.76rem; font-weight: 700;">
+                    {% if item.loyalty_impact %}
+                    <span style="color: {% if item.loyalty_impact > 0 %}#10b981{% else %}#ef4444{% endif %};">
+                        Лояльность: {% if item.loyalty_impact > 0 %}+{% endif %}{{ item.loyalty_impact }}%
+                    </span>
+                    {% endif %}
+                    {% if item.safety_impact %}
+                    <span style="color: {% if item.safety_impact > 0 %}#38bdf8{% else %}#ef4444{% endif %};">
+                        Безопасность: {% if item.safety_impact > 0 %}+{% endif %}{{ item.safety_impact }}%
+                    </span>
+                    {% endif %}
+                    {% if item.stress_impact %}
+                    <span style="color: {% if item.stress_impact < 0 %}#10b981{% else %}#f59e0b{% endif %};">
+                        Стресс: {% if item.stress_impact > 0 %}+{% endif %}{{ item.stress_impact }}%
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Кнопки действий -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <a href="{% url 'simulator:scenario_list' %}" class="vsm-btn vsm-btn-outline" style="padding: 0.8rem 1.6rem;">
+            <i data-lucide="grid" style="width: 18px; height: 18px;"></i>
+            <span>Каталог сценариев</span>
+        </a>
+
+        <div style="display: flex; gap: 1rem;">
+            <a href="{% url 'simulator:start_simulation' slug=scenario.slug %}" class="vsm-btn vsm-btn-outline" style="padding: 0.8rem 1.6rem; border-color: var(--vsm-cyan); color: var(--vsm-cyan);">
+                <i data-lucide="rotate-ccw" style="width: 18px; height: 18px;"></i>
+                <span>Пройти заново</span>
+            </a>
+            <a href="{% url 'simulator:dashboard' %}" class="vsm-btn vsm-btn-primary" style="padding: 0.8rem 1.8rem;">
+                <i data-lucide="home" style="width: 18px; height: 18px;"></i>
+                <span>На главный пульт</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

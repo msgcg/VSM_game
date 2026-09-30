@@ -1,0 +1,574 @@
+{% extends 'simulator/base.html' %}
+{% load static %}
+
+{% block title %}Симулятор ВСМ | {{ scenario.title }}{% endblock %}
+
+{% block content %}
+<div class="vsm-hud-container">
+    <!-- Верхняя статусная панель симулятора (Телеметрия поезда) -->
+    <div class="vsm-hud-topbar">
+        <div class="vsm-train-telemetry">
+            <!-- Спидометр поезда -->
+            <div class="vsm-telemetry-badge">
+                <i data-lucide="gauge" style="color: var(--vsm-cyan); width: 28px; height: 28px;"></i>
+                <div>
+                    <span id="vsm-live-speedo" class="vsm-speedo-num" data-base-speed="{{ scenario.train_speed }}">{{ scenario.train_speed }}</span>
+                    <span class="vsm-speedo-unit">км/ч</span>
+                </div>
+            </div>
+
+            <!-- Данные состава -->
+            <div style="border-left: 1px solid var(--vsm-border); padding-left: 1.25rem;">
+                <div style="font-size: 0.88rem; font-weight: 800; color: #ffffff;">{{ scenario.train_number }}</div>
+                <div style="font-size: 0.75rem; color: var(--vsm-cyan);">{{ scenario.car_info }}</div>
+            </div>
+
+            <!-- Локация перегона -->
+            <div style="border-left: 1px solid var(--vsm-border); padding-left: 1.25rem;">
+                <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Текущий перегон</div>
+                <div style="font-size: 0.85rem; font-weight: 600; color: #e2e8f0;">{{ scenario.location_name }}</div>
+            </div>
+        </div>
+
+        <!-- Кнопка аварийного выхода из симулятора -->
+        <a href="{% url 'simulator:scenario_detail' slug=scenario.slug %}" class="vsm-btn vsm-btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.78rem; border-color: rgba(239, 68, 68, 0.4); color: #f87171;">
+            <i data-lucide="log-out" style="width: 14px; height: 14px;"></i>
+            <span>Прервать смену</span>
+        </a>
+    </div>
+
+    <!-- Интерактивные шкалы состояния рейса в реальном времени -->
+    <div class="vsm-hud-metrics-bar">
+        <!-- 1. Лояльность пассажира -->
+        <div class="vsm-metric-box">
+            <div class="vsm-metric-header">
+                <span style="display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="smile" style="width: 14px; height: 14px; color: #10b981;"></i>
+                    <span>Лояльность гостей</span>
+                </span>
+                <span id="vsm-val-loyalty" class="vsm-metric-val" style="color: #10b981;">{{ session.current_loyalty }}%</span>
+            </div>
+            <div class="vsm-progress-track">
+                <div id="vsm-fill-loyalty" class="vsm-progress-fill vsm-fill-loyalty" style="width: {{ session.current_loyalty }}%;"></div>
+            </div>
+        </div>
+
+        <!-- 2. Рейтинг безопасности -->
+        <div class="vsm-metric-box">
+            <div class="vsm-metric-header">
+                <span style="display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="shield" style="width: 14px; height: 14px; color: #38bdf8;"></i>
+                    <span>Рейтинг безопасности</span>
+                </span>
+                <span id="vsm-val-safety" class="vsm-metric-val" style="color: #38bdf8;">{{ session.current_safety }}%</span>
+            </div>
+            <div class="vsm-progress-track">
+                <div id="vsm-fill-safety" class="vsm-progress-fill vsm-fill-safety" style="width: {{ session.current_safety }}%;"></div>
+            </div>
+        </div>
+
+        <!-- 3. Качество сервиса -->
+        <div class="vsm-metric-box">
+            <div class="vsm-metric-header">
+                <span style="display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="sparkles" style="width: 14px; height: 14px; color: #c084fc;"></i>
+                    <span>Стандарты сервиса</span>
+                </span>
+                <span id="vsm-val-service" class="vsm-metric-val" style="color: #c084fc;">{{ session.current_service }}%</span>
+            </div>
+            <div class="vsm-progress-track">
+                <div id="vsm-fill-service" class="vsm-progress-fill vsm-fill-service" style="width: {{ session.current_service }}%;"></div>
+            </div>
+        </div>
+
+        <!-- 4. Стресс проводника -->
+        <div class="vsm-metric-box">
+            <div class="vsm-metric-header">
+                <span style="display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="activity" style="width: 14px; height: 14px; color: #ef4444;"></i>
+                    <span>Уровень стресса</span>
+                </span>
+                <span id="vsm-val-stress" class="vsm-metric-val" style="color: #ef4444;">{{ session.current_stress }}%</span>
+            </div>
+            <div class="vsm-progress-track">
+                <div id="vsm-fill-stress" class="vsm-progress-fill vsm-fill-stress" style="width: {{ session.current_stress }}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Верхнее электронное светодиодное табло вагона (LED Matrix Runline) -->
+    <div class="vsm-car-led-board">
+        <div class="vsm-led-ticker-wrap">
+            <span class="vsm-led-item vsm-led-speed">
+                <i data-lucide="gauge" style="width: 15px; height: 15px;"></i>
+                <span>СКОРОСТЬ: <span id="vsm-live-speedo-led" data-base-speed="{{ scenario.train_speed }}">{{ scenario.train_speed }}</span> КМ/Ч</span>
+            </span>
+            <span class="vsm-led-sep">■</span>
+            <span class="vsm-led-item">
+                <i data-lucide="train" style="width: 14px; height: 14px;"></i>
+                <span>{{ scenario.train_number }} «БЕЛЫЙ КРЕЧЕТ»</span>
+            </span>
+            <span class="vsm-led-sep">■</span>
+            <span class="vsm-led-item">
+                <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+                <span>{{ scenario.car_info }}</span>
+            </span>
+            <span class="vsm-led-sep">■</span>
+            <span class="vsm-led-item">
+                <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+                <span>ПЕРЕГОН: {{ scenario.location_name }}</span>
+            </span>
+            <span class="vsm-led-sep">■</span>
+            <span class="vsm-led-item">
+                <i data-lucide="thermometer" style="width: 14px; height: 14px;"></i>
+                <span id="vsm-car-temp">САЛОН: +22°C</span>
+            </span>
+            <span class="vsm-led-sep">■</span>
+            <span class="vsm-led-item">
+                <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+                <span id="vsm-car-clock">14:40</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- 2. Основной отсек вагона: Салон с пассажиром + Настенный шкаф спецсредств -->
+    <div class="vsm-car-stage-layout">
+        
+        <!-- Салон вагона (Интерактивный Viewport) -->
+        <div class="vsm-car-viewport" id="vsm-car-scene-viewport" style="background-image: url('{% static 'simulator/img/' %}{{ scenario.background_image }}');">
+            <!-- Верхняя строка салона: Локация вагона + Таймер (всегда в своей строке, без наслоений!) -->
+            <div class="vsm-viewport-topline">
+                <div class="vsm-viewport-location-badge">
+                    <span class="vsm-status-indicator-dot"></span>
+                    <span>Салон • {{ scenario.car_info }}</span>
+                </div>
+                <!-- Таймер критического решения -->
+                <div id="vsm-timer-box" class="vsm-timer-display" title="Таймер критического решения">
+                    <i data-lucide="timer" style="width: 16px; height: 16px; color: var(--vsm-cyan);"></i>
+                    <span id="vsm-timer-sec" class="vsm-timer-sec">{{ timer_seconds }}</span>
+                    <span class="vsm-timer-unit">сек</span>
+                </div>
+            </div>
+
+            <!-- Диалоговая сцена: интерактивная лента чата вагона ВСМ -->
+            <div id="vsm-dialogue-stage" class="vsm-dialogue-stage">
+                <div id="vsm-chat-feed" class="vsm-chat-feed" data-conductor-avatar="{% static 'simulator/img/' %}{{ conductor.avatar|default:'avatar_1.svg' }}">
+                    <!-- Стартовая реплика пассажира -->
+                    <div class="vsm-chat-row passenger" id="vsm-first-passenger-row">
+                        <!-- Портрет пассажира / источника ситуации -->
+                        <div class="vsm-passenger-frame-col">
+                            <div class="vsm-passenger-avatar-box">
+                                <img id="vsm-char-avatar" src="{% static 'simulator/img/passenger_business.svg' %}" alt="Пассажир ВСМ" class="vsm-passenger-avatar-img">
+                            </div>
+                            <div class="vsm-passenger-role-pill" title="Роль участника инцидента">
+                                <span class="vsm-status-indicator-dot"></span>
+                                <span id="vsm-character-role">{{ current_node.character_role }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Речевой бабл с указателем -->
+                        <div class="vsm-speech-bubble">
+                            <div class="vsm-speech-header">
+                                <div class="vsm-speech-speaker">
+                                    <span id="vsm-character-name" class="vsm-speaker-name">{{ current_node.character_name }}</span>
+                                    <span id="vsm-character-mood" class="vsm-mood-badge vsm-mood-default">
+                                        {{ current_node.get_character_mood_display }}
+                                    </span>
+                                </div>
+                                <div class="vsm-speech-audio-controls">
+                                    <button id="vsm-tts-btn" class="vsm-tts-play-btn" onclick="window.vsmAudio.toggleSpeechCurrent()" title="Озвучить реплику пассажира (TTS)" type="button">
+                                        <i data-lucide="volume-2" style="width: 14px; height: 14px;"></i>
+                                        <span>Озвучить</span>
+                                    </button>
+                                    <div class="vsm-speech-audio-wave" title="Аудиоканал связи в вагоне" onclick="window.vsmAudio.toggleSpeechCurrent()" style="cursor: pointer;">
+                                        <span></span><span></span><span></span><span></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Реплика пассажира -->
+                            <div id="vsm-dialogue-text" class="vsm-speech-text">
+                                {{ current_node.dialogue_text }}
+                            </div>
+
+                            <!-- Контекст обстановки / показания датчиков / бортовой журнал -->
+                            <div id="vsm-narrative-context" class="vsm-speech-subcontext" {% if not current_node.narrative_context %}style="display: none;"{% endif %}>
+                                <div style="display: flex; align-items: center; gap: 0.45rem; flex: 1;">
+                                    <i data-lucide="radio" style="width: 15px; height: 15px; color: #a855f7; flex-shrink: 0;"></i>
+                                    <span id="vsm-narrative-context-text">{{ current_node.narrative_context }}</span>
+                                </div>
+                                <button type="button" id="vsm-context-audio-btn" class="vsm-audio-btn vsm-telemetry-audio-btn" onclick="simulator.toggleContextSpeech()" title="Озвучить бортовой журнал (роботизированный голос)">
+                                    <i data-lucide="volume-2" style="width: 13px; height: 13px;"></i>
+                                    <span>Аудио журнала</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Интерактивная зона воздействия в салоне (Drop-цель) -->
+            <div id="vsm-car-drop-target" class="vsm-car-drop-target"
+                 ondragover="simulator.handleDragOver(event)"
+                 ondragleave="simulator.handleDragLeave(event)"
+                 ondrop="simulator.handleDrop(event)">
+                <i data-lucide="crosshair" style="width: 18px; height: 18px; color: var(--vsm-cyan);"></i>
+                <span id="vsm-drop-target-text">Зона действия в вагоне: перетащите сюда предмет или кликните по оборудованию</span>
+            </div>
+        </div>
+
+        <!-- Настенный шкаф инвентаря и оборудования вагона ВСМ -->
+        <div class="vsm-car-equipment-rack">
+            <div class="vsm-rack-header">
+                <div class="vsm-rack-title">
+                    <i data-lucide="wrench" style="width: 16px; height: 16px; color: var(--vsm-cyan);"></i>
+                    <span>Оборудование вагона</span>
+                </div>
+                <span class="vsm-rack-badge">ВСМ-1</span>
+            </div>
+            
+            <div class="vsm-rack-items-list">
+                <!-- 1. Стоп-кран -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="emergency_brake" data-title="Рукоятка стоп-крана"
+                     ondragstart="simulator.handleDragStart(event, 'emergency_brake', 'Рукоятка стоп-крана')"
+                     ondragend="simulator.handleDragEnd(event)"
+                     onclick="simulator.useEquipment('emergency_brake', 'Срыв стоп-крана')"
+                     title="Экстренное торможение поезда. Запрещено на мостах и в тоннелях!">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(239, 68, 68, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/stop_brake.svg' %}" alt="Стоп-кран" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #fca5a5;">Стоп-кран</div>
+                    <div class="vsm-tactile-sub">С пломбой</div>
+                </div>
+
+                <!-- 2. Огнетушитель ОВП-8 -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="fire_extinguisher" data-title="Огнетушитель ОВП-8"
+                     ondragstart="simulator.handleDragStart(event, 'fire_extinguisher', 'Огнетушитель ОВП-8')"
+                     ondragend="simulator.handleDragEnd(event)"
+                     onclick="simulator.useEquipment('fire_extinguisher', 'Применение огнетушителя ОВП-8')"
+                     title="Пенный огнетушитель СПАС-ВО для тушения тамбура и очагов огня">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(245, 158, 11, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/fire_extinguisher.svg' %}" alt="Огнетушитель" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #fde68a;">ОВП-8</div>
+                    <div class="vsm-tactile-sub">Огнетушитель</div>
+                </div>
+
+                <!-- 3. Электрощит вагона и СКНБ -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="electric_panel" data-title="Электрощит и СКНБ"
+                     ondragstart="simulator.handleDragStart(event, 'electric_panel', 'Электрощит и СКНБ')"
+                     ondragend="simulator.handleDragEnd(event)"
+                     onclick="simulator.useEquipment('electric_panel', 'Осмотр электрощита и СКНБ')"
+                     title="Проверка сигнализации СКНБ, ламп «Земля», автомата климата">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(0, 210, 255, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/electric_panel.svg' %}" alt="Электрощит" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #7dd3fc;">Электрощит</div>
+                    <div class="vsm-tactile-sub">СКНБ / Питание</div>
+                </div>
+
+                <!-- 4. Медаптечка и АНД -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="aed_medkit" data-title="Аптечка и дефибриллятор АНД"
+                     ondragstart="simulator.handleDragStart(event, 'aed_medkit', 'Аптечка и дефибриллятор АНД')"
+                     ondragend="simulator.handleDragEnd(event)"
+                     onclick="simulator.useEquipment('aed_medkit', 'Вскрытие аптечки и АНД')"
+                     title="Комплект первой помощи и автоматический дефибриллятор АНД">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(168, 85, 247, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/aed_medkit.svg' %}" alt="Аптечка и АНД" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #a7f3d0;">Аптечка / АНД</div>
+                    <div class="vsm-tactile-sub">Первая помощь</div>
+                </div>
+
+                <!-- 5. Терминал УКЭБ -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="ukeb_scan" data-title="Терминал УКЭБ"
+                     ondragstart="simulator.handleDragStart(event, 'ukeb_scan', 'Терминал УКЭБ')"
+                     ondragend="simulator.handleDragEnd(event)"
+                     onclick="simulator.useEquipment('ukeb_scan', 'Проверка по терминалу УКЭБ')"
+                     title="Сканирование билетов, проверка паспорта, оформление акта">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(168, 85, 247, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/ukeb_terminal.svg' %}" alt="Терминал УКЭБ" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #c084fc;">Терминал УКЭБ</div>
+                    <div class="vsm-tactile-sub">Контроль билетов</div>
+                </div>
+
+                <!-- 6. Чайный сервис -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="tea_service" data-title="Фирменный чай в подстаканнике"
+                     ondragstart="simulator.handleDragStart(event, 'tea_service', 'Фирменный чай в подстаканнике')"
+                     ondragend="simulator.handleDragEnd(event)"
+                     onclick="simulator.useEquipment('tea_service', 'Предложить чай / воду с лимоном')"
+                     title="Фирменный чай в подстаканнике или вода для снятия раздражения">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(251, 191, 36, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/tea_glass.svg' %}" alt="Чайный сервис" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #fde047;">Сервис: Чай</div>
+                    <div class="vsm-tactile-sub">Подстаканник</div>
+                </div>
+
+                <!-- 7. Связь с машинистом УПС -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="driver_intercom" data-title="Интерком связи с машинистом"
+                     ondragstart="simulator.handleDragStart(event, 'driver_intercom', 'Интерком связи с машинистом')"
+                     ondragend="simulator.handleDragEnd(event)"
+                     onclick="simulator.useEquipment('driver_intercom', 'Связь с машинистом по УПС')"
+                     title="Экстренная связь с головной кабиной и поездным диспетчером">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(59, 130, 246, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/driver_intercom.svg' %}" alt="Связь с машинистом" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #93c5fd;">Вызов кабины</div>
+                    <div class="vsm-tactile-sub">Интерком УПС</div>
+                </div>
+
+                <!-- 8. Аварийный молоток -->
+                <div class="vsm-tactile-item" draggable="true" 
+                     data-code="glass_hammer" data-title="Аварийный молоток"
+                     ondragstart="simulator.handleDragStart(event, 'glass_hammer', 'Аварийный молоток')"
+                     ondragend="simulator.handleDragEnd(event)"
+                     onclick="simulator.useEquipment('glass_hammer', 'Взять аварийный молоток')"
+                     title="Разбить защитное стекло выхода при блокировке дверей">
+                    <div class="vsm-tactile-img-box" style="border-color: rgba(236, 72, 153, 0.4);">
+                        <img src="{% static 'simulator/img/equipment/glass_hammer.svg' %}" alt="Аварийный молоток" class="vsm-tactile-svg">
+                    </div>
+                    <div class="vsm-tactile-name" style="color: #f472b6;">Молоток</div>
+                    <div class="vsm-tactile-sub">Аварийный выход</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Пульт управления проводника: Радиосвязь PTT, частотный визуализатор, свободный ввод и быстрые решения -->
+    <div class="vsm-conductor-console">
+        <!-- Верхняя статусная строка пульта -->
+        <div class="vsm-console-topline">
+            <div id="vsm-ai-status-pill" class="vsm-live-status-indicator" style="margin-bottom: 0;">
+                <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+                <span id="vsm-ai-status-text">Нейросетевой ассистент • Голосовой эфир готов</span>
+            </div>
+            <div class="vsm-console-topline-right">
+                <button type="button" id="vsm-req-hint-btn" class="vsm-hint-req-btn" onclick="simulator.requestHint()" title="Запросить тактическую подсказку у ИИ-наставника ВСМ">
+                    <i data-lucide="help-circle" style="width: 13px; height: 13px;"></i>
+                    <span>Подсказка</span>
+                </button>
+                <div class="vsm-sto-label">
+                    <i data-lucide="radio" style="width: 14px; height: 14px; color: var(--vsm-cyan);"></i>
+                    <span>СТО ВСМ 03.011/013-2026 • Бортовой речевой комплекс ВСМ</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Тело пульта: PTT микрофон + Свободный ввод + Быстрые решения -->
+        <div class="vsm-console-body-grid">
+            <!-- Секция Push-To-Talk микрофона -->
+            <div class="vsm-ptt-box">
+                <div class="vsm-ptt-row">
+                    <button type="button" id="vsm-mic-btn" class="vsm-ptt-btn" onclick="simulator.toggleVoiceRecording()" title="Нажмите для голосовой передачи (Бортовая радиосвязь)">
+                        <i data-lucide="mic" style="width: 28px; height: 28px;"></i>
+                    </button>
+                    <div class="vsm-ptt-info">
+                        <div id="vsm-mic-status" class="vsm-mic-status-label">
+                            Нажмите и говорите
+                        </div>
+                        <canvas id="vsm-mic-canvas" class="vsm-mic-canvas" width="180" height="24"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Секция свободного ввода и тактических подсказок ИИ -->
+            <div class="vsm-conductor-input-col">
+                <!-- Форма текстового ввода: прямая отправка и редактирование распознанной речи -->
+                <form id="vsm-text-form" onsubmit="simulator.sendTextTurn(event);" class="vsm-text-box">
+                    <input type="text" id="vsm-user-text-input" class="vsm-text-input" placeholder="Введите слова проводника или скажите в микрофон..." autocomplete="off" oninput="simulator.onTextInputChange()">
+                    <button type="submit" id="vsm-text-send-btn" class="vsm-text-send-btn" style="display: none;">
+                        <i data-lucide="send" style="width: 15px; height: 15px;"></i>
+                        <span>Сказать</span>
+                    </button>
+                </form>
+
+                <!-- Панель подсказок ИИ: скрыта по умолчанию, появляется при необходимости помощи (func calling) или по запросу проводника -->
+                <div id="vsm-ai-hints-panel" class="vsm-ai-hints-panel" style="display: none;">
+                    <div class="vsm-hints-header">
+                        <div class="vsm-hints-title-wrap">
+                            <span class="vsm-hints-badge" style="display: inline-flex; align-items: center; gap: 4px;">
+                                <i data-lucide="lightbulb" style="width: 13px; height: 13px;"></i>
+                                <span>ИИ-Ассистент • Рекомендации</span>
+                            </span>
+                            <span id="vsm-ai-hint-reason" class="vsm-hints-reason-text">Эксперт ВСМ рекомендует следующие действия</span>
+                        </div>
+                        <button type="button" class="vsm-hints-close-btn" onclick="simulator.hideHintsPanel()" title="Скрыть подсказку">✕</button>
+                    </div>
+                    <div id="vsm-choices-container" class="vsm-protocol-grid">
+                        {% for choice in choices %}
+                        <button class="vsm-choice-btn" onclick="simulator.choose({{ choice.id }}, this)" style="padding: 0.85rem 1rem;">
+                            <div class="vsm-choice-num">{{ forloop.counter }}</div>
+                            <div class="vsm-choice-content">
+                                <div class="vsm-choice-title" style="font-size: 0.85rem;">{{ choice.choice_text }}</div>
+                                {% if choice.tactical_hint %}
+                                <div class="vsm-choice-hint" style="font-size: 0.74rem;">{{ choice.tactical_hint }}</div>
+                                {% endif %}
+                            </div>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно разбора ошибки при провале сценария -->
+<div id="vsm-fail-modal" style="display: none; position: fixed; inset: 0; background: rgba(3, 7, 18, 0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); z-index: 9999; align-items: center; justify-content: center; padding: 1.25rem;">
+    <div style="background: #0d1527; border: 2px solid rgba(253, 3, 58, 0.6); border-radius: 20px; max-width: 680px; width: 100%; box-shadow: 0 0 50px rgba(253, 3, 58, 0.35), 0 20px 40px rgba(0,0,0,0.8); overflow: hidden; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+        <!-- Шапка ошибки -->
+        <div style="padding: 1.5rem 1.75rem; background: linear-gradient(180deg, rgba(253, 3, 58, 0.2) 0%, rgba(13, 21, 39, 0) 100%); border-bottom: 1px solid rgba(253, 3, 58, 0.25); display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;">
+            <div>
+                <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(253, 3, 58, 0.2); border: 1px solid #fd033a; color: #ff6b8b; font-size: 0.72rem; font-weight: 800; padding: 0.25rem 0.65rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+                    <i data-lucide="alert-triangle" style="width: 14px; height: 14px;"></i>
+                    <span>Ситуация вышла из-под контроля • Сбой</span>
+                </div>
+                <h2 id="vsm-fail-title" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.3;">
+                    Сценарий провален
+                </h2>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(253, 3, 58, 0.2); border: 1px solid #fd033a; display: flex; align-items: center; justify-content: center; color: #fd033a; flex-shrink: 0;">
+                <i data-lucide="shield-alert" style="width: 26px; height: 26px;"></i>
+            </div>
+        </div>
+
+        <!-- Содержимое: где ошибся и почему -->
+        <div style="padding: 1.5rem 1.75rem; max-height: 60vh; overflow-y: auto;">
+            <!-- Блок 1: Что сделал пользователь -->
+            <div style="background: rgba(253, 3, 58, 0.08); border-left: 4px solid #fd033a; border-radius: 0 10px 10px 0; padding: 1rem 1.25rem; margin-bottom: 1rem;">
+                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #f87171; letter-spacing: 0.05em; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="x-circle" style="width: 14px; height: 14px;"></i>
+                    <span>Где вы ошиблись • Допущенное нарушение</span>
+                </div>
+                <div id="vsm-fail-action" style="font-size: 0.95rem; font-weight: 700; color: #ffffff; line-height: 1.5; margin-bottom: 0.4rem;"></div>
+                <div id="vsm-fail-report" style="font-size: 0.86rem; color: #fca5a5; line-height: 1.55;"></div>
+            </div>
+
+            <!-- Блок 2: Нарушенный норматив -->
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.9rem 1.25rem; margin-bottom: 1rem; display: flex; align-items: flex-start; gap: 0.85rem;">
+                <i data-lucide="book-marked" style="width: 20px; height: 20px; color: #f59e0b; flex-shrink: 0; margin-top: 2px;"></i>
+                <div>
+                    <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #fbbf24; letter-spacing: 0.05em;">
+                        Нарушенный регламент / Инструкция
+                    </div>
+                    <div id="vsm-fail-regulation" style="font-size: 0.88rem; color: #cbd5e1; margin-top: 0.25rem; font-weight: 600; line-height: 1.45;"></div>
+                </div>
+            </div>
+
+            <!-- Блок 3: Как следовало поступить -->
+            <div style="background: rgba(16, 185, 129, 0.08); border-left: 4px solid #10b981; border-radius: 0 10px 10px 0; padding: 1rem 1.25rem;">
+                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #34d399; letter-spacing: 0.05em; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+                    <span>Как следовало поступить по стандарту ВСМ</span>
+                </div>
+                <div id="vsm-fail-solution" style="font-size: 0.88rem; color: #d1fae5; line-height: 1.6;"></div>
+            </div>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div style="padding: 1.25rem 1.75rem; background: rgba(0, 0, 0, 0.25); border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap;">
+            <a href="{% url 'simulator:scenario_list' %}" class="vsm-btn vsm-btn-outline" style="padding: 0.65rem 1.1rem; font-size: 0.85rem;">
+                <i data-lucide="list" style="width: 15px; height: 15px;"></i>
+                <span>В каталог</span>
+            </a>
+            <button id="vsm-fail-debrief-btn" class="vsm-btn vsm-btn-outline" style="padding: 0.65rem 1.1rem; font-size: 0.85rem; border-color: rgba(253, 3, 58, 0.5); color: #ff859b;">
+                <i data-lucide="file-text" style="width: 15px; height: 15px;"></i>
+                <span>Дебрифинг сессии</span>
+            </button>
+            <button id="vsm-fail-restart-btn" class="vsm-btn vsm-btn-primary" style="padding: 0.65rem 1.3rem; font-size: 0.85rem; background: #fd033a; border-color: #fd033a;">
+                <i data-lucide="rotate-ccw" style="width: 15px; height: 15px;"></i>
+                <span>Попробовать снова</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно успешной сдачи смены / победы -->
+<div id="vsm-success-modal" style="display: none; position: fixed; inset: 0; background: rgba(3, 7, 18, 0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); z-index: 9999; align-items: center; justify-content: center; padding: 1.25rem;">
+    <div style="background: #0d1527; border: 2px solid rgba(16, 185, 129, 0.6); border-radius: 20px; max-width: 680px; width: 100%; box-shadow: 0 0 50px rgba(16, 185, 129, 0.35), 0 20px 40px rgba(0,0,0,0.8); overflow: hidden; animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+        <!-- Шапка успеха -->
+        <div style="padding: 1.5rem 1.75rem; background: linear-gradient(180deg, rgba(16, 185, 129, 0.2) 0%, rgba(13, 21, 39, 0) 100%); border-bottom: 1px solid rgba(16, 185, 129, 0.25); display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;">
+            <div>
+                <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.72rem; font-weight: 800; padding: 0.25rem 0.65rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+                    <i data-lucide="award" style="width: 14px; height: 14px;"></i>
+                    <span>Стандарт ВСМ выполнен • Ситуация разрешена</span>
+                </div>
+                <h2 id="vsm-success-title" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1.3;">
+                    Смена успешно принята
+                </h2>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; display: flex; align-items: center; justify-content: center; color: #10b981; flex-shrink: 0;">
+                <i data-lucide="check-circle-2" style="width: 26px; height: 26px;"></i>
+            </div>
+        </div>
+
+        <!-- Содержимое -->
+        <div style="padding: 1.5rem 1.75rem; max-height: 60vh; overflow-y: auto;">
+            <!-- Финальные слова персонажа -->
+            <div style="background: rgba(16, 185, 129, 0.08); border-left: 4px solid #10b981; border-radius: 0 10px 10px 0; padding: 1rem 1.25rem; margin-bottom: 1rem;">
+                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #34d399; letter-spacing: 0.05em; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="message-square" style="width: 14px; height: 14px;"></i>
+                    <span>Финальная реакция пассажира</span>
+                </div>
+                <div id="vsm-success-reply" style="font-size: 0.95rem; font-weight: 600; color: #ffffff; line-height: 1.5;"></div>
+            </div>
+
+            <!-- Разбор действий проводника -->
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.9rem 1.25rem; margin-bottom: 1rem; display: flex; align-items: flex-start; gap: 0.85rem;">
+                <i data-lucide="shield-check" style="width: 20px; height: 20px; color: #00d2ff; flex-shrink: 0; margin-top: 2px;"></i>
+                <div>
+                    <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #7dd3fc; letter-spacing: 0.05em;">
+                        Оценка экспертной системы ВСМ
+                    </div>
+                    <div id="vsm-success-feedback" style="font-size: 0.88rem; color: #cbd5e1; margin-top: 0.25rem; font-weight: 500; line-height: 1.45;"></div>
+                </div>
+            </div>
+
+            <!-- Награды -->
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <div style="flex: 1; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 0.75rem 1rem; text-align: center;">
+                    <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #6ee7b7;">Итоговый балл</div>
+                    <div id="vsm-success-score" style="font-size: 1.35rem; font-weight: 900; color: #10b981; margin-top: 0.2rem;">95/100</div>
+                </div>
+                <div style="flex: 1; background: rgba(0, 210, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 12px; padding: 0.75rem 1rem; text-align: center;">
+                    <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #7dd3fc;">Полученный опыт</div>
+                    <div id="vsm-success-xp" style="font-size: 1.35rem; font-weight: 900; color: var(--vsm-cyan); margin-top: 0.2rem;">+45 XP</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div style="padding: 1.25rem 1.75rem; background: rgba(0, 0, 0, 0.25); border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap;">
+            <a href="{% url 'simulator:scenario_list' %}" class="vsm-btn vsm-btn-outline" style="padding: 0.65rem 1.1rem; font-size: 0.85rem;">
+                <i data-lucide="list" style="width: 15px; height: 15px;"></i>
+                <span>В каталог</span>
+            </a>
+            <button id="vsm-success-result-btn" class="vsm-btn vsm-btn-primary" style="padding: 0.65rem 1.3rem; font-size: 0.85rem; background: #10b981; border-color: #10b981;">
+                <i data-lucide="file-check" style="width: 15px; height: 15px;"></i>
+                <span>Дебрифинг и итоги</span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    window.VSM_CONDUCTOR_AVATAR = "{% static 'simulator/img/' %}{{ conductor.avatar|default:'avatar_1.svg' }}";
+</script>
+<script src="{% static 'simulator/js/vsm_simulator.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        window.simulator = new VSMSimulator({{ session.id }}, {{ timer_seconds }});
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <defs>
+    <linearGradient id="pbg_mob" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="p_skin_mob" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fed7aa"/>
+      <stop offset="100%" stop-color="#fcd34d"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="76" fill="url(#pbg_mob)" stroke="#38bdf8" stroke-width="2.5"/>
+
+  <!-- Wheelchair headrest and back contour behind passenger -->
+  <rect x="52" y="32" width="56" height="70" rx="10" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <rect x="62" y="24" width="36" height="14" rx="4" fill="#334155" stroke="#64748b" stroke-width="1.5"/>
+
+  <!-- Shoulders & Comfortable Jacket with safety belt -->
+  <path d="M32 155 Q44 105 80 105 Q116 105 128 155 Z" fill="#1e3a5f"/>
+  <polygon points="70,105 80,120 90,105" fill="#f8fafc"/>
+  
+  <!-- Diagonal safety strap across shoulder -->
+  <path d="M48 107 L114 155 L124 150 L56 105 Z" fill="#0f172a" opacity="0.85"/>
+  <path d="M48 107 L114 155" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,2"/>
+
+  <!-- Neck -->
+  <rect x="72" y="80" width="16" height="26" rx="3" fill="#fcd34d"/>
+
+  <!-- Head / Face -->
+  <ellipse cx="80" cy="62" rx="23" ry="28" fill="url(#p_skin_mob)"/>
+
+  <!-- Neat Hair -->
+  <path d="M57 58 C53 38 68 32 80 32 C92 32 107 38 103 58 C98 42 88 40 80 40 C72 40 62 42 57 58 Z" fill="#475569"/>
+
+  <!-- Eyes -->
+  <circle cx="70" cy="59" r="2.8" fill="#1e293b"/>
+  <circle cx="90" cy="59" r="2.8" fill="#1e293b"/>
+
+  <!-- Eyebrows -->
+  <path d="M64 51 Q70 48 76 51" stroke="#334155" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <path d="M84 51 Q90 48 96 51" stroke="#334155" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+
+  <!-- Nose -->
+  <path d="M80 57 L78 68 L83 68" stroke="#d97706" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Polite Smile -->
+  <path d="M72 76 Q80 81 88 76" stroke="#b45309" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+  <!-- Wheelchair Accessibility Badge icon on the bottom right -->
+  <circle cx="122" cy="122" r="19" fill="#0284c7" stroke="#ffffff" stroke-width="2.5"/>
+  <!-- International Symbol of Access (ISA) inside badge -->
+  <g transform="translate(112, 112) scale(0.85)" fill="#ffffff">
+    <circle cx="11" cy="4" r="2.5"/>
+    <path d="M12 9 H8 C7.45 9 7 9.45 7 10 V14 C7 14.55 7.45 15 8 15 H10 V19 H13 V14 H10 V11 H13 C13.55 11 14 10.55 14 10 C14 9.45 13.55 9 13 9 Z"/>
+    <path d="M6 14 C4.34 14 3 15.34 3 17 C3 18.66 4.34 20 6 20 C7.48 20 8.72 18.93 8.95 17.5 H7.4 C7.19 18.08 6.64 18.5 6 18.5 C5.17 18.5 4.5 17.83 4.5 17 C4.5 16.17 5.17 15.5 6 15.5 C6.4 15.5 6.77 15.66 7.04 15.91 L8.15 14.8 C7.61 14.3 6.85 14 6 14 Z"/>
+  </g>
+
+  <!-- Outer Glow Accent -->
+  <circle cx="80" cy="80" r="74" fill="none" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5"/>
+</svg>

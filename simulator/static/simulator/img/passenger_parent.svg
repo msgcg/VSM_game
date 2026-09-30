@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <defs>
+    <linearGradient id="pbg_par" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="p_skin_par" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffedd5"/>
+      <stop offset="100%" stop-color="#fed7aa"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="76" fill="url(#pbg_par)" stroke="#facc15" stroke-width="2.5"/>
+
+  <!-- Parent Body -->
+  <path d="M25 155 Q35 108 72 108 Q100 108 110 155 Z" fill="#0284c7"/>
+  <rect x="58" y="80" width="16" height="26" rx="4" fill="#fed7aa"/>
+  <ellipse cx="66" cy="60" rx="22" ry="26" fill="url(#p_skin_par)"/>
+  
+  <!-- Parent Hair (ponytail) -->
+  <path d="M46 54 Q54 32 72 32 Q90 32 90 48 Q82 38 68 40 Q50 42 46 54 Z" fill="#78350f"/>
+  <path d="M44 54 Q38 65 34 80 Q42 75 44 60 Z" fill="#78350f"/>
+  
+  <!-- Parent Eyes & Expression (gentle / caring / worried) -->
+  <circle cx="58" cy="57" r="3" fill="#0f172a"/>
+  <circle cx="74" cy="57" r="3" fill="#0f172a"/>
+  <path d="M54 51 Q60 48 64 51" stroke="#451a03" stroke-width="2" fill="none"/>
+  <path d="M70 51 Q76 48 80 51" stroke="#451a03" stroke-width="2" fill="none"/>
+  <path d="M66 57 L64 64 L68 64" stroke="#fb923c" stroke-width="1.5" fill="none"/>
+  <path d="M62 72 Q66 75 70 72" stroke="#ea580c" stroke-width="1.5" fill="none"/>
+
+  <!-- Child on the right (toddler looking up) -->
+  <circle cx="112" cy="118" r="22" fill="#fed7aa"/>
+  <!-- Child hair with little curl -->
+  <path d="M96 112 Q112 94 126 112 Q120 102 110 104 Q100 102 96 112 Z" fill="#b45309"/>
+  <path d="M110 100 Q114 90 120 96" stroke="#b45309" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Child body / romper -->
+  <path d="M92 155 Q94 135 112 135 Q130 135 134 155 Z" fill="#facc15"/>
+  <!-- Child big innocent eyes -->
+  <circle cx="106" cy="116" r="3.5" fill="#0f172a"/>
+  <circle cx="107" cy="115" r="1.5" fill="#ffffff"/>
+  <circle cx="118" cy="116" r="3.5" fill="#0f172a"/>
+  <circle cx="119" cy="115" r="1.5" fill="#ffffff"/>
+  <path d="M110 125 Q112 128 115 125" stroke="#ea580c" stroke-width="1.5" fill="none"/>
+
+  <!-- Parent arm embracing child -->
+  <path d="M70 125 Q90 130 105 136" stroke="#0284c7" stroke-width="12" stroke-linecap="round" fill="none"/>
+  <ellipse cx="106" cy="136" rx="6" ry="5" fill="#fed7aa"/>
+
+  <!-- Star / Toy badge -->
+  <circle cx="130" cy="40" r="13" fill="#f59e0b" stroke="#ffffff" stroke-width="1.5"/>
+  <path d="M130 31 L132 37 L138 37 L133 41 L135 47 L130 43 L125 47 L127 41 L122 37 L128 37 Z" fill="#ffffff"/>
+</svg>

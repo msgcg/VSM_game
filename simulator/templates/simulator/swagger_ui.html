@@ -1,0 +1,299 @@
+{% extends 'simulator/base.html' %}
+{% load static %}
+
+{% block title %}Документация REST API v1 | ВСМ «Белый кречет»{% endblock %}
+
+{% block extra_head %}
+<!-- Swagger UI CDN -->
+<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css">
+<style>
+/* Темная неоновая стилизация Swagger UI под дизайн-систему ВСМ-1 */
+.swagger-ui {
+    color: #e2e8f0;
+}
+.swagger-ui .topbar {
+    display: none;
+}
+.swagger-ui .wrapper {
+    max-width: 1200px;
+    padding: 0;
+}
+.swagger-ui .info {
+    margin: 20px 0 30px 0;
+}
+.swagger-ui .info .title {
+    color: #ffffff;
+    font-size: 1.8rem;
+    font-weight: 800;
+}
+.swagger-ui .info p, .swagger-ui .info li {
+    color: #94a3b8;
+    font-size: 0.95rem;
+}
+.swagger-ui .scheme-container {
+    background: rgba(13, 22, 41, 0.9);
+    border: 1px solid rgba(0, 210, 255, 0.25);
+    border-radius: 12px;
+    padding: 15px 20px;
+    box-shadow: none;
+    margin-bottom: 25px;
+}
+.swagger-ui .opblock-tag {
+    color: #ffffff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+.swagger-ui .opblock {
+    background: #0d1629;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    margin: 0 0 15px;
+}
+.swagger-ui .opblock.opblock-get {
+    border-color: #00d2ff;
+    background: rgba(0, 210, 255, 0.05);
+}
+.swagger-ui .opblock.opblock-get .opblock-summary-method {
+    background: #00d2ff;
+    color: #070c18;
+    font-weight: 800;
+}
+.swagger-ui .opblock.opblock-post {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.05);
+}
+.swagger-ui .opblock.opblock-post .opblock-summary-method {
+    background: #10b981;
+    color: #070c18;
+    font-weight: 800;
+}
+.swagger-ui .opblock-summary-path {
+    color: #ffffff;
+    font-weight: 700;
+}
+.swagger-ui .opblock-summary-description {
+    color: #94a3b8;
+}
+.swagger-ui table thead tr th, .swagger-ui table thead tr td {
+    color: #cbd5e1;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.swagger-ui .response-col_status {
+    color: #ffffff;
+}
+.swagger-ui .model-box, .swagger-ui section.models {
+    background: #0d1629;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+.swagger-ui .btn {
+    border-radius: 8px;
+}
+.swagger-ui select {
+    background: #070c18;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding-bottom: 3rem;">
+    <!-- Баннер API -->
+    <div class="vsm-hero-banner" style="margin-bottom: 1.5rem;">
+        <div class="vsm-hero-content">
+            <div class="vsm-hero-badge">
+                <i data-lucide="terminal" style="width: 14px; height: 14px;"></i>
+                <span>OpenAPI 3.0.3 • REST API Спецификация</span>
+            </div>
+            <h1 class="vsm-hero-title">Программный интерфейс обучающего комплекса ВСМ-1</h1>
+            <p class="vsm-hero-subtitle">
+                Интеграция со скоростными магистралями, корпоративными порталами дистанционного обучения и мобильными приложениями поездных бригад «Белый кречет».
+            </p>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap;">
+                <a href="{{ openapi_url }}" target="_blank" class="vsm-btn vsm-btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                    <i data-lucide="file-code" style="width: 15px; height: 15px;"></i>
+                    <span>Скачать OpenAPI JSON</span>
+                </a>
+                <a href="{% url 'simulator:dashboard' %}" class="vsm-btn vsm-btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                    <i data-lucide="arrow-left" style="width: 15px; height: 15px;"></i>
+                    <span>Вернуться к пульту</span>
+                </a>
+            </div>
+
+            <!-- Метрики покрытия API -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.85rem; margin-top: 1.5rem;">
+                <div class="vsm-metric-pill" style="background: rgba(0, 210, 255, 0.08); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 10px; padding: 0.65rem 0.9rem;">
+                    <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Эндпоинты</div>
+                    <div style="font-size: 1.25rem; font-weight: 900; color: var(--vsm-cyan);">24 метода</div>
+                </div>
+                <div class="vsm-metric-pill" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 0.65rem 0.9rem;">
+                    <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Стандарт</div>
+                    <div style="font-size: 1.25rem; font-weight: 900; color: #10b981;">OpenAPI 3.0.3</div>
+                </div>
+                <div class="vsm-metric-pill" style="background: rgba(8, 42, 153, 0.25); border: 1px solid rgba(0, 210, 255, 0.25); border-radius: 10px; padding: 0.65rem 0.9rem;">
+                    <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Модули</div>
+                    <div style="font-size: 1.25rem; font-weight: 900; color: #ffffff;">11 разделов</div>
+                </div>
+                <div class="vsm-metric-pill" style="background: rgba(253, 3, 58, 0.08); border: 1px solid rgba(253, 3, 58, 0.3); border-radius: 10px; padding: 0.65rem 0.9rem;">
+                    <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Синтез и Live AI</div>
+                    <div style="font-size: 1.25rem; font-weight: 900; color: #fd033a;">Vulkan / Edge / LLM</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Быстрая навигация по тегам модулей -->
+    <div style="margin-bottom: 1.25rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <button type="button" onclick="filterSwaggerTag('all')" class="vsm-btn vsm-btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Все модули</button>
+        <button type="button" onclick="filterSwaggerTag('Profile')" class="vsm-btn vsm-btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Профиль</button>
+        <button type="button" onclick="filterSwaggerTag('Crew')" class="vsm-btn vsm-btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Экипаж</button>
+        <button type="button" onclick="filterSwaggerTag('Scenarios')" class="vsm-btn vsm-btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Сценарии</button>
+        <button type="button" onclick="filterSwaggerTag('Simulation')" class="vsm-btn vsm-btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Симуляция</button>
+        <button type="button" onclick="filterSwaggerTag('Carousel')" class="vsm-btn vsm-btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Карусель</button>
+        <button type="button" onclick="filterSwaggerTag('Regulations')" class="vsm-btn vsm-btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Регламенты</button>
+        <button type="button" onclick="filterSwaggerTag('Analytics')" class="vsm-btn vsm-btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Аналитика</button>
+        <button type="button" onclick="filterSwaggerTag('Leaderboard')" class="vsm-btn vsm-btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Рейтинг</button>
+        <button type="button" onclick="filterSwaggerTag('Notifications')" class="vsm-btn vsm-btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Уведомления</button>
+        <button type="button" onclick="filterSwaggerTag('Audio')" class="vsm-btn vsm-btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Аудио TTS</button>
+        <button type="button" onclick="filterSwaggerTag('AI Live')" class="vsm-btn vsm-btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">AI Live</button>
+    </div>
+
+    <!-- Контейнер Swagger UI -->
+    <div class="vsm-card" style="padding: 1.5rem; background: #070c18; border-color: rgba(0, 210, 255, 0.25);">
+        <div id="swagger-ui"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js"></script>
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Словарь русской локализации Swagger UI
+    const SWAGGER_RU_DICT = {
+        'Try it out': 'Тестировать',
+        'Cancel': 'Отмена',
+        'Execute': 'Выполнить запрос',
+        'Clear': 'Очистить',
+        'Authorize': 'Авторизоваться',
+        'Close': 'Закрыть',
+        'Parameters': 'Параметры запроса',
+        'No parameters': 'Параметры отсутствуют',
+        'Responses': 'Ответы сервера',
+        'Request body': 'Тело запроса (JSON)',
+        'Server response': 'Ответ сервера',
+        'Response headers': 'Заголовки ответа',
+        'Response body': 'Тело ответа',
+        'Download': 'Скачать результат',
+        'Copy': 'Копировать',
+        'Copied': 'Скопировано',
+        'Description': 'Описание',
+        'Code': 'Код ответа',
+        'Name': 'Параметр',
+        'Media type': 'Формат данных',
+        'Controls Accept header.': 'Управление заголовком Accept.',
+        'Schemas': 'Схемы данных',
+        'Schemes': 'Протокол передачи',
+        'Loading...': 'Загрузка спецификации...',
+        'Failed to load API definition.': 'Не удалось загрузить спецификацию API.'
+    };
+
+    function filterSwaggerTag(tagName) {
+        const root = document.getElementById('swagger-ui');
+        if (!root) return;
+        const tagSections = root.querySelectorAll('.opblock-tag-section');
+        tagSections.forEach(sec => {
+            const h4 = sec.querySelector('.opblock-tag');
+            if (!h4) return;
+            const text = h4.textContent.trim();
+            if (tagName === 'all' || text.toLowerCase().includes(tagName.toLowerCase())) {
+                sec.style.display = '';
+                // Разворачиваем секцию если выбран конкретный тег
+                if (tagName !== 'all') {
+                    const btn = sec.querySelector('.opblock-tag button');
+                    if (btn && sec.querySelector('.is-open') === null) {
+                        btn.click();
+                    }
+                }
+            } else {
+                sec.style.display = 'none';
+            }
+        });
+    }
+
+    function translateSwaggerUI() {
+        const root = document.getElementById('swagger-ui');
+        if (!root) return;
+
+        // 1. Перевод кнопок
+        root.querySelectorAll('button, .btn, .authorize span, .opblock-summary-description').forEach(el => {
+            const text = el.textContent.trim();
+            if (SWAGGER_RU_DICT[text]) {
+                el.textContent = SWAGGER_RU_DICT[text];
+            }
+        });
+
+        // 2. Перевод заголовков секций
+        root.querySelectorAll('h4, h5, .tabitem, .response-col_status, .response-col_description, .parameters-col_name, .parameters-col_description').forEach(el => {
+            const text = el.textContent.trim();
+            if (SWAGGER_RU_DICT[text]) {
+                el.textContent = SWAGGER_RU_DICT[text];
+            }
+        });
+
+        // 3. Текст "No parameters"
+        root.querySelectorAll('.opblock-description-wrapper p, .parameters-container .opblock-description-wrapper').forEach(el => {
+            if (el.textContent.trim() === 'No parameters') {
+                el.textContent = 'Параметры отсутствуют';
+            }
+        });
+    }
+
+    window.addEventListener('load', () => {
+        const ui = SwaggerUIBundle({
+            url: "{{ openapi_url }}",
+            dom_id: '#swagger-ui',
+            deepLinking: true,
+            presets: [
+                SwaggerUIBundle.presets.apis,
+            ],
+            layout: "BaseLayout",
+            requestInterceptor: (req) => {
+                const csrfToken = getCookie('csrftoken');
+                if (csrfToken) {
+                    req.headers['X-CSRFToken'] = csrfToken;
+                }
+                return req;
+            },
+            onComplete: () => {
+                translateSwaggerUI();
+            }
+        });
+
+        // Отслеживаем динамические обновления DOM для перевода в реальном времени
+        const observer = new MutationObserver(() => {
+            translateSwaggerUI();
+        });
+        const target = document.getElementById('swagger-ui');
+        if (target) {
+            observer.observe(target, { childList: true, subtree: true, characterData: true });
+        }
+    });
+</script>
+{% endblock %}

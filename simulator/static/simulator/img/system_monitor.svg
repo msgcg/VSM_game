@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <defs>
+    <linearGradient id="pbg_sys" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#082a99"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="screen_glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00d2ff"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+  </defs>
+  <!-- Background with tech cyan border -->
+  <circle cx="80" cy="80" r="76" fill="url(#pbg_sys)" stroke="#00d2ff" stroke-width="2.5"/>
+
+  <!-- Radar / Telemetry grid -->
+  <circle cx="80" cy="80" r="60" fill="none" stroke="rgba(0, 210, 255, 0.2)" stroke-width="1" stroke-dasharray="4,4"/>
+  <circle cx="80" cy="80" r="42" fill="none" stroke="rgba(0, 210, 255, 0.3)" stroke-width="1"/>
+  <circle cx="80" cy="80" r="24" fill="none" stroke="rgba(0, 210, 255, 0.4)" stroke-width="1.5"/>
+  <line x1="20" y1="80" x2="140" y2="80" stroke="rgba(0, 210, 255, 0.25)" stroke-width="1"/>
+  <line x1="80" y1="20" x2="80" y2="140" stroke="rgba(0, 210, 255, 0.25)" stroke-width="1"/>
+
+  <!-- Main HUD Terminal Monitor shape -->
+  <rect x="42" y="44" width="76" height="58" rx="8" fill="rgba(15, 23, 42, 0.85)" stroke="#00d2ff" stroke-width="2"/>
+
+  <!-- Screen Header -->
+  <rect x="42" y="44" width="76" height="12" rx="6" fill="#082a99"/>
+  <circle cx="48" cy="50" r="2.5" fill="#fd033a"/>
+  <circle cx="56" cy="50" r="2.5" fill="#facc15"/>
+  <circle cx="64" cy="50" r="2.5" fill="#10b981"/>
+  <text x="80" y="53" fill="#cbd5e1" font-size="6" font-family="monospace" font-weight="bold">VSM TELEMETRY</text>
+
+  <!-- Pulse waveform on screen -->
+  <path d="M46 76 L60 76 L66 62 L72 88 L78 70 L84 80 L90 76 L114 76" stroke="#00d2ff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Speedometer ring indicator inside monitor -->
+  <circle cx="102" cy="65" r="7" fill="none" stroke="#fd033a" stroke-width="2" stroke-dasharray="28,10"/>
+  <circle cx="102" cy="65" r="2" fill="#fd033a"/>
+
+  <!-- Base Stand -->
+  <path d="M72 102 L64 122 L96 122 L88 102 Z" fill="#334155" stroke="#475569" stroke-width="1.5"/>
+  <rect x="54" y="122" width="52" height="6" rx="3" fill="#1e293b" stroke="#00d2ff" stroke-width="1"/>
+
+  <!-- Flashing Alert Beacon on top -->
+  <circle cx="80" cy="36" r="6" fill="#fd033a"/>
+  <path d="M74 36 L68 28" stroke="#fd033a" stroke-width="2" stroke-linecap="round"/>
+  <path d="M86 36 L92 28" stroke="#fd033a" stroke-width="2" stroke-linecap="round"/>
+  <path d="M80 30 L80 24" stroke="#fd033a" stroke-width="2" stroke-linecap="round"/>
+</svg>
